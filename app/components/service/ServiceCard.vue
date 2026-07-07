@@ -46,7 +46,7 @@ const items = computed<DropdownMenuItem[][]>(() => [
 </script>
 
 <template>
-  <UCard class="overflow-hidden w-full" :ui="{ body: 'p-4' }">
+  <UCard class="overflow-hidden w-full" variant="subtle" :ui="{ body: 'p-4' }">
     <div class="flex justify-between items-start gap-4">
       <div class="flex items-start gap-4 flex-1 min-w-0">
         <div
