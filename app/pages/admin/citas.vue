@@ -8,6 +8,7 @@ const {
   status,
   hasMore,
   isLoadingMore,
+  currentFilter,
   refresh,
   fetchAppointments,
   loadMore,
@@ -21,14 +22,16 @@ type AppointmentWithRelations = Tables<"appointments"> & {
 
 type StatusFilter = "ALL" | "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELED";
 
-const selectedStatus = ref<StatusFilter>("ALL");
+const selectedStatus = ref<StatusFilter>(currentFilter.value);
 
 watch(selectedStatus, (newStatus) => {
   setFilter(newStatus);
 });
 
 onMounted(() => {
-  fetchAppointments();
+  if (status.value !== "success") {
+    fetchAppointments(selectedStatus.value);
+  }
 });
 
 const modal = reactive({

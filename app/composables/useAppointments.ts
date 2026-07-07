@@ -28,8 +28,8 @@ export function useAppointments() {
     () => "ALL",
   );
   const limit = 10;
-  const offset = ref(0);
-  const hasMore = ref(true);
+  const offset = useState<number>("appointments-offset", () => 0);
+  const hasMore = useState<boolean>("appointments-has-more", () => true);
   const isLoadingMore = ref(false);
 
   const buildQuery = (filter: StatusFilter, lim: number, off: number) => {
@@ -49,6 +49,13 @@ export function useAppointments() {
   const fetchAppointments = async (filter?: StatusFilter) => {
     if (filter !== undefined) {
       currentFilter.value = filter;
+    }
+    if (
+      status.value === "success" &&
+      appointments.value.length > 0 &&
+      (filter === undefined || filter === currentFilter.value)
+    ) {
+      return;
     }
 
     status.value = "pending";
