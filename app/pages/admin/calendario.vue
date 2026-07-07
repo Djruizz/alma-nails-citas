@@ -3,7 +3,7 @@ definePageMeta({ layout: 'default' })
 </script>
 
 <template>
-  <div class="p-4 sm:p-6 space-y-6 max-w-2xl mx-auto">
+  <div class="p-4 sm:p-6 space-y-6">
     <AppPageHeader
       title="Calendario"
       description="Visualiza las citas en el calendario"

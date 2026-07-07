@@ -1,43 +1,36 @@
 <script setup lang="ts">
-definePageMeta({ layout: 'default' })
+definePageMeta({ layout: "default" });
 
-const { fetchClients } = useClients()
-const clients = ref<Awaited<ReturnType<typeof fetchClients>>>([])
-const error = ref<string | null>(null)
-
-try {
-  clients.value = await fetchClients()
-} catch (e) {
-  error.value = (e as Error).message
-}
+const { clients, fetchClients } = useClients();
+await fetchClients();
 
 const stats = computed(() => [
   {
-    label: 'Total Clientes',
+    label: "Total Clientes",
     value: clients.value.length,
-    icon: 'i-lucide-users',
-    color: 'text-primary',
-    bg: 'bg-primary/10',
+    icon: "i-lucide-users",
+    color: "text-primary",
+    bg: "bg-primary/10",
   },
   {
-    label: 'Citas Hoy',
+    label: "Citas Hoy",
     value: 0,
-    icon: 'i-lucide-calendar-check',
-    color: 'text-success',
-    bg: 'bg-success/10',
+    icon: "i-lucide-calendar-check",
+    color: "text-success",
+    bg: "bg-success/10",
   },
   {
-    label: 'Pendientes',
+    label: "Pendientes",
     value: 0,
-    icon: 'i-lucide-clock',
-    color: 'text-warning',
-    bg: 'bg-warning/10',
+    icon: "i-lucide-clock",
+    color: "text-warning",
+    bg: "bg-warning/10",
   },
-])
+]);
 </script>
 
 <template>
-  <div class="p-4 sm:p-6 space-y-6 max-w-2xl mx-auto">
+  <div class="p-4 sm:p-6 space-y-6">
     <AppPageHeader
       title="Panel"
       description="Resumen de tu actividad"
@@ -64,13 +57,5 @@ const stats = computed(() => [
         </div>
       </UCard>
     </div>
-
-    <UAlert
-      v-if="error"
-      :title="error"
-      icon="i-lucide-alert-circle"
-      color="error"
-      variant="subtle"
-    />
   </div>
 </template>

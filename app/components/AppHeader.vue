@@ -34,7 +34,7 @@ const initials = computed(() => {
 
 <template>
   <header
-    class="fixed top-0 inset-x-0 z-40 flex items-center justify-between h-16 px-4 sm:px-6 border-b border-default/60 bg-elevated/75 backdrop-blur-md supports-backdrop-filter:bg-elevated/60"
+    class="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-5xl z-40 flex items-center justify-between h-16 px-4 sm:px-6 border-b border-default/60 bg-elevated/75 backdrop-blur-md supports-backdrop-filter:bg-elevated/60"
   >
     <div class="flex items-center gap-2.5">
       <div
