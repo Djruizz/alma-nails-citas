@@ -16,8 +16,10 @@ export type Database = {
     Tables: {
       clients: {
         Row: {
+          client_since: string | null
           created_at: string | null
           id: string
+          is_active: boolean
           name: string
           notes: string | null
           phone: string | null
@@ -25,8 +27,10 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          client_since?: string | null
           created_at?: string | null
           id?: string
+          is_active?: boolean
           name: string
           notes?: string | null
           phone?: string | null
@@ -34,8 +38,10 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          client_since?: string | null
           created_at?: string | null
           id?: string
+          is_active?: boolean
           name?: string
           notes?: string | null
           phone?: string | null

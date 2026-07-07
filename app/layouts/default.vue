@@ -1,12 +1,12 @@
 <script setup lang="ts">
-const user = useSupabaseUser()
+const user = useSupabaseUser();
 </script>
 
 <template>
   <div class="min-h-dvh bg-default">
     <AppHeader v-if="user" />
 
-    <main class="pt-16 max-w-5xl mx-auto" :class="{ 'pb-28': user }">
+    <main class="max-w-5xl mx-auto" :class="{ 'pb-18': user }">
       <NuxtPage />
     </main>
 

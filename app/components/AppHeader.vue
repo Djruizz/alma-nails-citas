@@ -33,28 +33,20 @@ const initials = computed(() => {
 </script>
 
 <template>
-  <header
-    class="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-5xl z-40 flex items-center justify-between h-16 px-4 sm:px-6 border-b border-default/60 bg-elevated/75 backdrop-blur-md supports-backdrop-filter:bg-elevated/60"
+  <UHeader
+    title="AlmaNails"
+    :ui="{ container: 'max-w-5xl' }"
+    :toggle="false"
+    class="sticky-top"
   >
-    <div class="flex items-center gap-2.5">
-      <div
-        class="flex items-center justify-center size-9 rounded-xl bg-linear-to-br from-primary-400 to-primary-600 shadow-sm shadow-primary/30"
-      >
-        <UIcon name="i-lucide-sparkles" class="size-5 text-inverted" />
-      </div>
-      <span class="text-lg font-semibold tracking-tight text-highlighted">
-        Alma Nails
-      </span>
-    </div>
-
-    <div class="flex items-center gap-2">
-      <UDropdownMenu v-if="user" :items="items" :content="{ align: 'end' }">
-        <button
+    <template #right>
+      <UDropdownMenu v-if="user" :items="items">
+        <UButton
           class="flex items-center justify-center size-9 rounded-full text-sm font-semibold text-muted ring-1 ring-default hover:bg-accented transition-colors cursor-pointer"
         >
           {{ initials }}
-        </button>
+        </UButton>
       </UDropdownMenu>
-    </div>
-  </header>
+    </template>
+  </UHeader>
 </template>

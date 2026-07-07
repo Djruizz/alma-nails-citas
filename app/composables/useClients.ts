@@ -1,5 +1,5 @@
 // composables/useClients.ts
-import { type Tables } from "~/types/database.types";
+import { type Tables, type TablesInsert, type TablesUpdate } from "~/types/database.types";
 
 type Client = Tables<"clients">;
 
@@ -18,7 +18,10 @@ export function useClients() {
     if (clients.value.length > 0 && status.value === "success") return;
 
     status.value = "pending";
-    const { data, error } = await supabase.from("clients").select("*");
+    const { data, error } = await supabase
+      .from("clients")
+      .select("*")
+      .eq("is_active", true);
     if (error) {
       status.value = "error";
       throw error;
@@ -29,7 +32,10 @@ export function useClients() {
 
   const refresh = async () => {
     status.value = "pending";
-    const { data, error } = await supabase.from("clients").select("*");
+    const { data, error } = await supabase
+      .from("clients")
+      .select("*")
+      .eq("is_active", true);
     if (error) {
       status.value = "error";
       throw error;
@@ -38,10 +44,48 @@ export function useClients() {
     status.value = "success";
   };
 
+  const createClient = async (payload: TablesInsert<"clients">) => {
+    const { data, error } = await supabase
+      .from("clients")
+      .insert(payload)
+      .select()
+      .single();
+    if (error) throw error;
+    if (data) clients.value.push(data);
+    return data;
+  };
+
+  const updateClient = async (id: string, payload: TablesUpdate<"clients">) => {
+    const { data, error } = await supabase
+      .from("clients")
+      .update(payload)
+      .eq("id", id)
+      .select()
+      .single();
+    if (error) throw error;
+    if (data) {
+      const idx = clients.value.findIndex((c) => c.id === id);
+      if (idx !== -1) clients.value[idx] = data;
+    }
+    return data;
+  };
+
+  const removeClient = async (id: string) => {
+    const { error } = await supabase
+      .from("clients")
+      .update({ is_active: false })
+      .eq("id", id);
+    if (error) throw error;
+    clients.value = clients.value.filter((c) => c.id !== id);
+  };
+
   return {
     clients,
     status,
-    fetchClients, // llama esto en cada página (onMounted o directo en <script setup>)
-    refresh, // fuerza recarga real
+    fetchClients,
+    refresh,
+    createClient,
+    updateClient,
+    removeClient,
   };
 }
