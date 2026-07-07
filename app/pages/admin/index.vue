@@ -2,7 +2,9 @@
 definePageMeta({ layout: "default" });
 
 const { clients, fetchClients } = useClients();
-await fetchClients();
+onMounted(() => {
+  fetchClients();
+});
 
 const stats = computed(() => [
   {

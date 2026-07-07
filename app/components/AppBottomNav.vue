@@ -2,7 +2,7 @@
 const route = useRoute();
 
 const items = [
-  { label: "Citas", icon: "i-lucide-calendar-check", to: "/admin/citas" },
+  { label: "Servicios", icon: "i-lucide-scissors", to: "/admin/servicios" },
   { label: "Clientes", icon: "i-lucide-users", to: "/admin/clientes" },
   { label: "Inicio", icon: "i-lucide-home", to: "/admin" },
   {
@@ -10,7 +10,7 @@ const items = [
     icon: "i-lucide-calendar-days",
     to: "/admin/calendario",
   },
-  { label: "Ajustes", icon: "i-lucide-settings", to: "/admin/configuracion" },
+  { label: "Citas", icon: "i-lucide-calendar-check", to: "/admin/citas" },
 ];
 
 function isActive(to: string) {

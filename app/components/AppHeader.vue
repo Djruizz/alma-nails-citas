@@ -14,6 +14,13 @@ const items = computed(() => {
     ],
     [
       {
+        label: "Configuración",
+        icon: "i-lucide-settings",
+        to: "/admin/configuracion",
+      },
+    ],
+    [
+      {
         label: "Cerrar sesión",
         icon: "i-lucide-log-out",
         color: "error" as const,

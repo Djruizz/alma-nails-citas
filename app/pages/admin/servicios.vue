@@ -3,38 +3,38 @@ import type { Tables } from "~/types/database.types";
 
 definePageMeta({ layout: "default" });
 
-const { clients, status, refresh, fetchClients } = useClients();
+const { services, status, refresh, fetchServices } = useServices();
 onMounted(() => {
-  fetchClients();
+  fetchServices();
 });
 
-type Client = Tables<"clients">;
+type Service = Tables<"services">;
 
 const modal = reactive({
   open: false,
   mode: "create" as "create" | "edit",
-  client: null as Client | null,
+  service: null as Service | null,
 });
 
 const deleteModal = reactive({
   open: false,
-  client: null as Client | null,
+  service: null as Service | null,
 });
 
 function openCreate() {
   modal.mode = "create";
-  modal.client = null;
+  modal.service = null;
   modal.open = true;
 }
 
-function openEdit(client: Client) {
+function openEdit(service: Service) {
   modal.mode = "edit";
-  modal.client = client;
+  modal.service = service;
   modal.open = true;
 }
 
-function openDelete(client: Client) {
-  deleteModal.client = client;
+function openDelete(service: Service) {
+  deleteModal.service = service;
   deleteModal.open = true;
 }
 </script>
@@ -42,9 +42,9 @@ function openDelete(client: Client) {
 <template>
   <div class="p-4 sm:p-6 space-y-6">
     <AppPageHeader
-      title="Clientes"
-      description="Gestiona tus clientes y sus datos"
-      icon="i-lucide-users"
+      title="Servicios"
+      description="Administra tus servicios"
+      icon="i-lucide-scissors"
     >
       <template #actions>
         <UButton
@@ -59,7 +59,7 @@ function openDelete(client: Client) {
           @click="refresh()"
         />
         <UButton
-          icon="i-lucide-user-plus"
+          icon="i-lucide-plus"
           label="Nuevo"
           size="md"
           @click="openCreate"
@@ -67,22 +67,22 @@ function openDelete(client: Client) {
       </template>
     </AppPageHeader>
 
-    <ClientList
-      :clients="clients"
+    <ServiceList
+      :services="services"
       :loading="status === 'pending'"
       @edit="openEdit"
       @delete="openDelete"
     />
 
-    <ClientModal
+    <ServiceModal
       v-model:open="modal.open"
       :mode="modal.mode"
-      :client="modal.client ?? undefined"
+      :service="modal.service ?? undefined"
     />
 
-    <ClientDeleteModal
+    <ServiceDeleteModal
       v-model:open="deleteModal.open"
-      :client="deleteModal.client ?? undefined"
+      :service="deleteModal.service ?? undefined"
     />
   </div>
 </template>
