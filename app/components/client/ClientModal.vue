@@ -30,7 +30,11 @@ async function onSubmit(payload: ClientSchema) {
       const professionalId = user.value?.sub;
       if (!professionalId)
         throw new Error("No se pudo obtener el usuario autenticado");
-      await createClient({ ...payload, professional_id: professionalId });
+      await createClient({
+        ...payload,
+        professional_id: professionalId,
+        updated_at: new Date().toISOString(),
+      });
       toast.add({
         title: "Cliente creado",
         description: payload.name,

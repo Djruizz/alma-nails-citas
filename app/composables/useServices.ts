@@ -1,5 +1,9 @@
 // composables/useServices.ts
-import { type Tables, type TablesInsert, type TablesUpdate } from "~/types/database.types";
+import {
+  type Tables,
+  type TablesInsert,
+  type TablesUpdate,
+} from "~/types/database.types";
 
 type Service = Tables<"services">;
 
@@ -19,6 +23,7 @@ export function useServices() {
     const { data, error } = await supabase
       .from("services")
       .select("*")
+      .eq("is_active", true)
       .order("name");
     if (error) {
       status.value = "error";
@@ -33,6 +38,7 @@ export function useServices() {
     const { data, error } = await supabase
       .from("services")
       .select("*")
+      .eq("is_active", true)
       .order("name");
     if (error) {
       status.value = "error";
@@ -53,7 +59,10 @@ export function useServices() {
     return data;
   };
 
-  const updateService = async (id: string, payload: TablesUpdate<"services">) => {
+  const updateService = async (
+    id: string,
+    payload: TablesUpdate<"services">,
+  ) => {
     const { data, error } = await supabase
       .from("services")
       .update(payload)
@@ -71,7 +80,7 @@ export function useServices() {
   const deleteService = async (id: string) => {
     const { error } = await supabase
       .from("services")
-      .delete()
+      .update({ is_active: false })
       .eq("id", id);
     if (error) throw error;
     services.value = services.value.filter((s) => s.id !== id);

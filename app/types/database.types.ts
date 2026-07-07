@@ -14,6 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
+      appointments: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          date: string
+          duration_minutes: number
+          id: string
+          notes: string | null
+          price: number | null
+          professional_id: string
+          service_id: string | null
+          status: Database["public"]["Enums"]["appointment_status"]
+          updated_at: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          date: string
+          duration_minutes: number
+          id?: string
+          notes?: string | null
+          price?: number | null
+          professional_id?: string
+          service_id?: string | null
+          status?: Database["public"]["Enums"]["appointment_status"]
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          date?: string
+          duration_minutes?: number
+          id?: string
+          notes?: string | null
+          price?: number | null
+          professional_id?: string
+          service_id?: string | null
+          status?: Database["public"]["Enums"]["appointment_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointments_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           client_since: string | null
@@ -56,6 +113,7 @@ export type Database = {
           description: string | null
           duration_minutes: number | null
           id: string
+          is_active: boolean
           name: string
           price: number | null
           professional_id: string | null
@@ -65,6 +123,7 @@ export type Database = {
           description?: string | null
           duration_minutes?: number | null
           id?: string
+          is_active?: boolean
           name: string
           price?: number | null
           professional_id?: string | null
@@ -74,6 +133,7 @@ export type Database = {
           description?: string | null
           duration_minutes?: number | null
           id?: string
+          is_active?: boolean
           name?: string
           price?: number | null
           professional_id?: string | null
@@ -88,7 +148,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      appointment_status: "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELED"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -215,6 +275,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      appointment_status: ["PENDING", "CONFIRMED", "COMPLETED", "CANCELED"],
+    },
   },
 } as const
