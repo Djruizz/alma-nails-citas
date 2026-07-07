@@ -1,4 +1,6 @@
 <script setup lang="ts">
+definePageMeta({ layout: false })
+
 import { z } from "zod";
 
 import type { AuthFormField, FormSubmitEvent } from "@nuxt/ui";
@@ -61,7 +63,7 @@ async function onSubmit(payload: FormSubmitEvent<Schema>) {
     icon: "i-lucide-circle-check",
     color: "success",
   });
-  navigateTo("admin/");
+  await navigateTo("/admin/citas");
 }
 </script>
 

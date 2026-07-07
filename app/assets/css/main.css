@@ -1,2 +1,11 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
+
+:root {
+  --ui-header-height: 4rem;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
