@@ -91,15 +91,6 @@ watch(
   },
   { immediate: true },
 );
-
-watch(
-  () => calendarStatus.value,
-  async (status) => {
-    if (status === "idle") {
-      await fetchAppointmentsByRange(rangeStartISO.value, rangeEndISO.value);
-    }
-  },
-);
 </script>
 
 <template>

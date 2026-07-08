@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import logo from "~/assets/AlmaPadillaLogo.jpg";
+
 const supabase = useSupabaseClient();
 const user = useSupabaseUser();
 
@@ -40,12 +42,10 @@ const initials = computed(() => {
 </script>
 
 <template>
-  <UHeader
-    title="AlmaNails"
-    :ui="{ container: 'max-w-5xl' }"
-    :toggle="false"
-    class="sticky-top"
-  >
+  <UHeader :ui="{ container: 'max-w-5xl' }" :toggle="false" class="sticky-top">
+    <template #left>
+      <img :src="logo" alt="Logo Alma" class="h-16 rounded" />
+    </template>
     <template #right>
       <UDropdownMenu v-if="user" :items="items">
         <UButton

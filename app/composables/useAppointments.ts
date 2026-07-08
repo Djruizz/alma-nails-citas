@@ -15,11 +15,15 @@ type StatusFilter = "ALL" | "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELED";
 export function useAppointments() {
   const supabase = useSupabaseClient();
   const { isValidStatusTransition } = useAppointmentStatus();
+  const { toISODateKey } = useDateUtils();
 
-  const appointments = useState<AppointmentWithRelations[]>(
-    "appointments",
-    () => [],
+  // ÚNICA fuente de verdad: Map<id, AppointmentWithRelations>
+  const appointmentsById = useState<Map<string, AppointmentWithRelations>>(
+    "appointments-by-id",
+    () => new Map(),
   );
+
+  // Metadata de la lista paginada
   const status = useState<"idle" | "pending" | "success" | "error">(
     "appointments-status",
     () => "idle",
@@ -31,7 +35,63 @@ export function useAppointments() {
   const limit = 10;
   const offset = useState<number>("appointments-offset", () => 0);
   const hasMore = useState<boolean>("appointments-has-more", () => true);
-  const isLoadingMore = ref(false);
+  const isLoadingMore = useState<boolean>(
+    "appointments-is-loading-more",
+    () => false,
+  );
+  const listIdsOrder = useState<string[]>("appointments-list-order", () => []);
+  const loadedFilters = useState<Set<StatusFilter>>(
+    "appointments-loaded-filters",
+    () => new Set(),
+  );
+
+  // Metadata del calendario (no guarda datos, solo estado y último rango cargado)
+  const calendarStatus = useState<"idle" | "pending" | "success" | "error">(
+    "calendar-appointments-status",
+    () => "idle",
+  );
+  const loadedCalendarRange = useState<{ start: string; end: string } | null>(
+    "calendar-loaded-range",
+    () => null,
+  );
+
+  // DERIVADOS (computed) — ya no hay caches duplicados
+  const appointments = computed<AppointmentWithRelations[]>(() =>
+    listIdsOrder.value
+      .map((id) => appointmentsById.value.get(id))
+      .filter((a): a is AppointmentWithRelations => !!a),
+  );
+
+  const calendarAppointments = computed<
+    Record<string, AppointmentWithRelations[]>
+  >(() => {
+    const grouped: Record<string, AppointmentWithRelations[]> = {};
+    for (const a of appointmentsById.value.values()) {
+      const key = toISODateKey(new Date(a.date));
+      (grouped[key] ??= []).push(a);
+    }
+    for (const k of Object.keys(grouped)) {
+      grouped[k]?.sort(
+        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+      );
+    }
+    return grouped;
+  });
+
+  // Helpers de mutación del Map (nueva ref para disparar reactividad)
+  const mergeIntoMap = (rows: AppointmentWithRelations[]) => {
+    const next = new Map(appointmentsById.value);
+    for (const r of rows) next.set(r.id, r);
+    appointmentsById.value = next;
+  };
+
+  const removeFromMap = (id: string) => {
+    const next = new Map(appointmentsById.value);
+    next.delete(id);
+    appointmentsById.value = next;
+  };
+
+  const findAppointment = (id: string) => appointmentsById.value.get(id);
 
   const buildQuery = (filter: StatusFilter, lim: number, off: number) => {
     let query = supabase
@@ -56,11 +116,13 @@ export function useAppointments() {
 
     const filterChanged = filter !== undefined && filter !== previousFilter;
 
+    // Short-circuit: solo si ya se cargó previamente el filtro actual,
+    // no hubo cambio de filtro, y no se pidió refresco manual.
     if (
       status.value === "success" &&
-      appointments.value.length > 0 &&
+      loadedFilters.value.has(currentFilter.value) &&
       !filterChanged &&
-      (filter === undefined || filter === currentFilter.value)
+      filter === undefined
     ) {
       return;
     }
@@ -74,8 +136,14 @@ export function useAppointments() {
       status.value = "error";
       throw error;
     }
-    appointments.value = data || [];
-    hasMore.value = data?.length === limit;
+    const rows = (data || []) as AppointmentWithRelations[];
+    mergeIntoMap(rows);
+    listIdsOrder.value = rows.map((r) => r.id);
+    loadedFilters.value = new Set([
+      ...loadedFilters.value,
+      currentFilter.value,
+    ]);
+    hasMore.value = rows.length === limit;
     status.value = "success";
   };
 
@@ -95,10 +163,12 @@ export function useAppointments() {
       throw error;
     }
 
-    if (data && data.length > 0) {
-      appointments.value.push(...data);
+    const rows = (data || []) as AppointmentWithRelations[];
+    if (rows.length > 0) {
+      mergeIntoMap(rows);
+      listIdsOrder.value = [...listIdsOrder.value, ...rows.map((r) => r.id)];
       offset.value = newOffset;
-      hasMore.value = data.length === limit;
+      hasMore.value = rows.length === limit;
     } else {
       hasMore.value = false;
     }
@@ -106,6 +176,8 @@ export function useAppointments() {
   };
 
   const refresh = async () => {
+    // Invalida filtros cargados para forzar refetch desde offset 0
+    loadedFilters.value = new Set();
     status.value = "idle";
     await fetchAppointments(currentFilter.value);
   };
@@ -121,7 +193,14 @@ export function useAppointments() {
       .select("*, clients(*), services(*)")
       .single();
     if (error) throw error;
-    if (data) appointments.value.unshift(data);
+    if (data) {
+      const row = data as AppointmentWithRelations;
+      mergeIntoMap([row]);
+      // Si la lista está cargada, prepend para que aparezca arriba
+      if (status.value === "success") {
+        listIdsOrder.value = [row.id, ...listIdsOrder.value];
+      }
+    }
     return data;
   };
 
@@ -129,6 +208,16 @@ export function useAppointments() {
     id: string,
     payload: TablesUpdate<"appointments">,
   ) => {
+    const existing = findAppointment(id);
+
+    // Validar transición de estado si el payload intenta cambiarlo
+    if (payload.status && existing) {
+      const newStatus = payload.status as Tables<"appointments">["status"];
+      if (!isValidStatusTransition(existing.status, newStatus)) {
+        throw new Error("Transición de estado inválida");
+      }
+    }
+
     const { data, error } = await supabase
       .from("appointments")
       .update(payload)
@@ -137,14 +226,13 @@ export function useAppointments() {
       .single();
     if (error) throw error;
     if (data) {
-      const idx = appointments.value.findIndex((a) => a.id === id);
-      if (idx !== -1) appointments.value[idx] = data;
+      mergeIntoMap([data as AppointmentWithRelations]);
     }
     return data;
   };
 
   const cancelAppointment = async (id: string) => {
-    const appointment = appointments.value.find((a) => a.id === id);
+    const appointment = findAppointment(id);
     if (!appointment) {
       throw new Error("Cita no encontrada");
     }
@@ -163,13 +251,12 @@ export function useAppointments() {
     if (error) throw error;
 
     if (data) {
-      const idx = appointments.value.findIndex((a) => a.id === id);
-      if (idx !== -1) appointments.value[idx] = data;
+      mergeIntoMap([data as AppointmentWithRelations]);
     }
   };
 
   const confirmAppointment = async (id: string) => {
-    const appointment = appointments.value.find((a) => a.id === id);
+    const appointment = findAppointment(id);
     if (!appointment) {
       throw new Error("Cita no encontrada");
     }
@@ -188,8 +275,7 @@ export function useAppointments() {
     if (error) throw error;
 
     if (data) {
-      const idx = appointments.value.findIndex((a) => a.id === id);
-      if (idx !== -1) appointments.value[idx] = data;
+      mergeIntoMap([data as AppointmentWithRelations]);
     }
   };
 
@@ -197,7 +283,7 @@ export function useAppointments() {
     id: string,
     payload: { price: number; notes?: string },
   ) => {
-    const appointment = appointments.value.find((a) => a.id === id);
+    const appointment = findAppointment(id);
     if (!appointment) {
       throw new Error("Cita no encontrada");
     }
@@ -221,19 +307,9 @@ export function useAppointments() {
     if (error) throw error;
 
     if (data) {
-      const idx = appointments.value.findIndex((a) => a.id === id);
-      if (idx !== -1) appointments.value[idx] = data;
+      mergeIntoMap([data as AppointmentWithRelations]);
     }
   };
-
-  const calendarAppointments = useState<Record<string, AppointmentWithRelations[]>>(
-    "calendar-appointments",
-    () => ({}),
-  );
-  const calendarStatus = useState<"idle" | "pending" | "success" | "error">(
-    "calendar-appointments-status",
-    () => "idle",
-  );
 
   const fetchAppointmentsByRange = async (startISO: string, endISO: string) => {
     calendarStatus.value = "pending";
@@ -249,15 +325,10 @@ export function useAppointments() {
       throw error;
     }
 
-    const grouped: Record<string, AppointmentWithRelations[]> = {};
-    for (const apt of (data || []) as AppointmentWithRelations[]) {
-      const d = new Date(apt.date);
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-      if (!grouped[key]) grouped[key] = [];
-      grouped[key].push(apt);
-    }
-
-    calendarAppointments.value = grouped;
+    const rows = (data || []) as AppointmentWithRelations[];
+    // Merge, NO pisa: las citas previas quedan disponibles para la lista paginada
+    mergeIntoMap(rows);
+    loadedCalendarRange.value = { start: startISO, end: endISO };
     calendarStatus.value = "success";
   };
 
@@ -293,6 +364,9 @@ export function useAppointments() {
 
     window.open(whatsappUrl, "_blank");
   };
+
+  // Exposed for potential future hard-delete flows
+  // removeFromMap is not currently exported to keep the public API minimal
 
   return {
     appointments,

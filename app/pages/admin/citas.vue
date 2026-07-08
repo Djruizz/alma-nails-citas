@@ -29,9 +29,7 @@ watch(selectedStatus, (newStatus) => {
 });
 
 onMounted(() => {
-  if (status.value !== "success") {
-    fetchAppointments(selectedStatus.value);
-  }
+  fetchAppointments(selectedStatus.value);
 });
 
 const modal = reactive({

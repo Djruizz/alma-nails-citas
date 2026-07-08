@@ -17,7 +17,6 @@ const {
   completeAppointment,
   cancelAppointment,
   remindViaWhatsApp,
-  refresh,
 } = useAppointments();
 const {
   getStatusColor,
@@ -108,7 +107,6 @@ async function onConfirm() {
   confirming.value = true;
   try {
     await confirmAppointment(props.appointment.id);
-    await refresh();
     toast.add({
       title: "Cita confirmada",
       color: "success",
@@ -145,7 +143,6 @@ async function onComplete() {
       price: completePrice.value,
       notes: completeNotes.value,
     });
-    await refresh();
     toast.add({
       title: "Cita completada",
       color: "success",
@@ -169,7 +166,6 @@ async function onCancel() {
   canceling.value = true;
   try {
     await cancelAppointment(props.appointment.id);
-    await refresh();
     toast.add({
       title: "Cita cancelada",
       color: "success",
@@ -265,9 +261,9 @@ function backToDetail() {
       <div v-if="appointment" class="space-y-5 py-1">
         <div v-if="!showCompleteForm">
           <div class="space-y-4">
-            <div class="grid grid-cols-2 gap-3">
+            <div class="grid grid-cols-3 gap-3">
               <div
-                class="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-muted"
+                class="flex items-center col-span-2 gap-3 p-3 rounded-lg bg-muted/50 border border-muted"
               >
                 <div
                   class="flex items-center justify-center size-9 rounded-lg bg-primary/10 text-primary shrink-0"
@@ -283,7 +279,7 @@ function backToDetail() {
               </div>
 
               <div
-                class="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-muted"
+                class="flex items-center col-span-1 gap-3 p-3 rounded-lg bg-muted/50 border border-muted"
               >
                 <div
                   class="flex items-center justify-center size-9 rounded-lg bg-primary/10 text-primary shrink-0"
