@@ -1,5 +1,5 @@
 <script setup lang="ts">
-type StatusFilter = "ALL" | "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELED";
+type StatusFilter = "ALL" | "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELED" | "REMEMBER";
 
 const modelValue = defineModel<StatusFilter>({ default: "ALL" });
 
@@ -33,6 +33,12 @@ const statusFilters = [
     value: "CANCELED" as const,
     icon: "i-lucide-x-circle",
     iconColor: "text-red-500",
+  },
+  {
+    label: "Recordar",
+    value: "REMEMBER" as const,
+    icon: "i-lucide-bell-ring",
+    iconColor: "text-purple-500",
   },
 ];
 

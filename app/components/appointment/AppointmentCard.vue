@@ -17,8 +17,10 @@ const emit = defineEmits<{
   detail: [appointment: AppointmentWithRelations];
 }>();
 
-const { getStatusColor, getStatusLabel, getStatusIcon, canCancel, canConfirm } = useAppointmentStatus();
-const { formatDate, formatTime } = useDateUtils();
+const { getStatusColor, getStatusLabel, getStatusIcon, canCancel, canConfirm } =
+  useAppointmentStatus();
+const { formatDate, formatTime, isWeeksOrMoreAgo, weeksSince } = useDateUtils();
+const { followUpViaWhatsApp } = useAppointments();
 
 const clientName = computed(
   () => props.appointment.clients?.name || "Sin cliente",
@@ -56,6 +58,19 @@ const statusIcon = computed(() => {
   return getStatusIcon(props.appointment.status);
 });
 
+const needsFollowUp = computed(() => {
+  return (
+    props.appointment.status === "COMPLETED" &&
+    isWeeksOrMoreAgo(props.appointment.date, 3)
+  );
+});
+
+const weeksAgoText = computed(() => {
+  const weeks = weeksSince(props.appointment.date);
+  if (weeks === 3) return "3 semanas";
+  return `${weeks} semanas`;
+});
+
 const items = computed<DropdownMenuItem[][]>(() => {
   const status = props.appointment.status;
   const menuItems: DropdownMenuItem[][] = [];
@@ -76,6 +91,15 @@ const items = computed<DropdownMenuItem[][]>(() => {
 function onCardClick() {
   emit("detail", props.appointment);
 }
+
+function onWhatsAppClick(event: Event) {
+  event.stopPropagation();
+  try {
+    followUpViaWhatsApp(props.appointment);
+  } catch (error) {
+    console.error(error);
+  }
+}
 </script>
 
 <template>
@@ -94,18 +118,27 @@ function onCardClick() {
         </div>
 
         <div class="min-w-0 flex-1">
-          <div class="flex items-center gap-2 mb-1">
+          <div class="flex items-center gap-2 mb-1 flex-wrap">
             <p class="text-sm font-semibold text-highlighted truncate">
               {{ clientName }}
             </p>
             <UBadge
               :color="statusColor"
-              size="xs"
+              size="sm"
               variant="subtle"
               class="gap-1"
             >
               <UIcon :name="statusIcon" class="size-3" />
               {{ statusLabel }}
+            </UBadge>
+            <UBadge
+              v-if="needsFollowUp"
+              size="sm"
+              variant="subtle"
+              class="gap-1 bg-purple-400/10 text-purple-500"
+            >
+              <UIcon name="i-lucide-bell-ring" class="size-3" />
+              {{ weeksAgoText }}
             </UBadge>
           </div>
           <p class="text-sm text-muted truncate">{{ serviceName }}</p>
@@ -127,16 +160,26 @@ function onCardClick() {
           </div>
         </div>
       </div>
-      <UDropdownMenu v-if="showActions && items.length > 0" :items="items">
+      <div class="flex items-center gap-2 shrink-0">
         <UButton
-          icon="i-lucide-ellipsis-vertical"
+          v-if="needsFollowUp && appointment.clients?.phone"
+          icon="i-lucide-message-circle"
           size="sm"
-          variant="link"
-          color="neutral"
-          class="cursor-pointer shrink-0"
-          @click.stop
+          variant="soft"
+          class="cursor-pointer bg-purple-400/10 text-purple-500"
+          @click="onWhatsAppClick"
         />
-      </UDropdownMenu>
+        <UDropdownMenu v-if="showActions && items.length > 0" :items="items">
+          <UButton
+            icon="i-lucide-ellipsis-vertical"
+            size="sm"
+            variant="link"
+            color="neutral"
+            class="cursor-pointer shrink-0"
+            @click.stop
+          />
+        </UDropdownMenu>
+      </div>
     </div>
   </UCard>
 </template>

@@ -118,6 +118,17 @@ export function useDateUtils() {
     return isSameDay(date, new Date());
   };
 
+  const weeksSince = (isoString: string): number => {
+    const appointmentDate = new Date(isoString);
+    const now = new Date();
+    const diffMs = now.getTime() - appointmentDate.getTime();
+    return Math.floor(diffMs / (1000 * 60 * 60 * 24 * 7));
+  };
+
+  const isWeeksOrMoreAgo = (isoString: string, weeks: number): boolean => {
+    return weeksSince(isoString) >= weeks;
+  };
+
   return {
     toDatetimeLocal,
     fromDatetimeLocal,
@@ -133,5 +144,7 @@ export function useDateUtils() {
     addMonths,
     isSameDay,
     isToday,
+    weeksSince,
+    isWeeksOrMoreAgo,
   };
 }

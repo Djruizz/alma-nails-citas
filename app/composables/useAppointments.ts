@@ -10,7 +10,7 @@ type AppointmentWithRelations = Tables<"appointments"> & {
   services?: Tables<"services"> | null;
 };
 
-type StatusFilter = "ALL" | "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELED";
+type StatusFilter = "ALL" | "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELED" | "REMEMBER";
 
 export function useAppointments() {
   const supabase = useSupabaseClient();
@@ -93,6 +93,29 @@ export function useAppointments() {
 
   const findAppointment = (id: string) => appointmentsById.value.get(id);
 
+  const matchesFilter = (
+    appointment: AppointmentWithRelations,
+    filter: StatusFilter,
+  ): boolean => {
+    if (filter === "ALL") return true;
+    if (filter === "REMEMBER") {
+      if (appointment.status !== "COMPLETED") return false;
+      const threeWeeksAgo = new Date();
+      threeWeeksAgo.setDate(threeWeeksAgo.getDate() - 21);
+      return new Date(appointment.date) <= threeWeeksAgo;
+    }
+    return appointment.status === filter;
+  };
+
+  const removeFromListIfNotMatching = (
+    id: string,
+    appointment: AppointmentWithRelations,
+  ) => {
+    if (status.value === "success" && !matchesFilter(appointment, currentFilter.value)) {
+      listIdsOrder.value = listIdsOrder.value.filter((listId) => listId !== id);
+    }
+  };
+
   const buildQuery = (filter: StatusFilter, lim: number, off: number) => {
     let query = supabase
       .from("appointments")
@@ -100,7 +123,13 @@ export function useAppointments() {
       .order("date", { ascending: false })
       .range(off, off + lim - 1);
 
-    if (filter !== "ALL") {
+    if (filter === "REMEMBER") {
+      const threeWeeksAgo = new Date();
+      threeWeeksAgo.setDate(threeWeeksAgo.getDate() - 21);
+      query = query
+        .eq("status", "COMPLETED")
+        .lte("date", threeWeeksAgo.toISOString());
+    } else if (filter !== "ALL") {
       query = query.eq("status", filter);
     }
 
@@ -196,8 +225,7 @@ export function useAppointments() {
     if (data) {
       const row = data as AppointmentWithRelations;
       mergeIntoMap([row]);
-      // Si la lista está cargada, prepend para que aparezca arriba
-      if (status.value === "success") {
+      if (status.value === "success" && matchesFilter(row, currentFilter.value)) {
         listIdsOrder.value = [row.id, ...listIdsOrder.value];
       }
     }
@@ -227,6 +255,7 @@ export function useAppointments() {
     if (error) throw error;
     if (data) {
       mergeIntoMap([data as AppointmentWithRelations]);
+      removeFromListIfNotMatching(id, data as AppointmentWithRelations);
     }
     return data;
   };
@@ -252,6 +281,7 @@ export function useAppointments() {
 
     if (data) {
       mergeIntoMap([data as AppointmentWithRelations]);
+      removeFromListIfNotMatching(id, data as AppointmentWithRelations);
     }
   };
 
@@ -276,6 +306,7 @@ export function useAppointments() {
 
     if (data) {
       mergeIntoMap([data as AppointmentWithRelations]);
+      removeFromListIfNotMatching(id, data as AppointmentWithRelations);
     }
   };
 
@@ -308,6 +339,7 @@ export function useAppointments() {
 
     if (data) {
       mergeIntoMap([data as AppointmentWithRelations]);
+      removeFromListIfNotMatching(id, data as AppointmentWithRelations);
     }
   };
 
@@ -365,6 +397,23 @@ export function useAppointments() {
     window.open(whatsappUrl, "_blank");
   };
 
+  const followUpViaWhatsApp = (appointment: AppointmentWithRelations) => {
+    const phone = appointment.clients?.phone;
+    if (!phone) {
+      throw new Error("El cliente no tiene número de teléfono");
+    }
+
+    const clientName = appointment.clients?.name || "Cliente";
+    const serviceName = appointment.services?.name || "servicio";
+
+    const message = `Hola ${clientName}! ¿Cómo estás? Te escribimos de Alma Nails para saber si quedaste conforme con tu ${serviceName}. ¡Nos encantaría verte de nuevo! ¿Te gustaría agendar tu próxima cita? ¡Gracias!`;
+
+    const cleanPhone = phone.replace(/\D/g, "");
+    const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+
+    window.open(whatsappUrl, "_blank");
+  };
+
   // Exposed for potential future hard-delete flows
   // removeFromMap is not currently exported to keep the public API minimal
 
@@ -388,5 +437,6 @@ export function useAppointments() {
     confirmAppointment,
     completeAppointment,
     remindViaWhatsApp,
+    followUpViaWhatsApp,
   };
 }

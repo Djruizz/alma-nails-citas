@@ -20,7 +20,7 @@ type AppointmentWithRelations = Tables<"appointments"> & {
   services?: Tables<"services"> | null;
 };
 
-type StatusFilter = "ALL" | "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELED";
+type StatusFilter = "ALL" | "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELED" | "REMEMBER";
 
 const selectedStatus = ref<StatusFilter>(currentFilter.value);
 
