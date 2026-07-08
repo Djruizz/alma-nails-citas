@@ -56,12 +56,13 @@ function onSubmit(event: FormSubmitEvent<ClientSchema>) {
       <UInput
         v-model="state.name"
         placeholder="Nombre del cliente"
+        icon="i-lucide-user"
         class="w-full"
       />
     </UFormField>
 
     <UFormField name="phone" label="Teléfono">
-      <UInput v-model="state.phone" placeholder="Teléfono" class="w-full" />
+      <UInput v-model="state.phone" placeholder="Teléfono" icon="i-lucide-phone" class="w-full" />
     </UFormField>
     <UFormField name="client_since" label="Cliente desde:">
       <UInput
@@ -69,6 +70,7 @@ function onSubmit(event: FormSubmitEvent<ClientSchema>) {
         placeholder="Fecha de registro"
         class="w-full"
         type="date"
+        icon="i-lucide-calendar"
       />
     </UFormField>
 

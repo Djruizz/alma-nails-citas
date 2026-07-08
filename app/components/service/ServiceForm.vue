@@ -63,6 +63,7 @@ function onSubmit(event: FormSubmitEvent<ServiceSchema>) {
       <UInput
         v-model="state.name"
         placeholder="Nombre del servicio"
+        icon="i-lucide-sparkles"
         class="w-full"
       />
     </UFormField>
@@ -84,6 +85,7 @@ function onSubmit(event: FormSubmitEvent<ServiceSchema>) {
         type="number"
         min="1"
         placeholder="30"
+        icon="i-lucide-clock"
         class="w-full"
       />
     </UFormField>
@@ -95,6 +97,7 @@ function onSubmit(event: FormSubmitEvent<ServiceSchema>) {
         min="0"
         step="0.01"
         placeholder="0.00"
+        icon="i-lucide-dollar-sign"
         class="w-full"
       />
     </UFormField>

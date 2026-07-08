@@ -218,61 +218,153 @@ function backToDetail() {
 </script>
 
 <template>
-  <UModal v-model:open="open" :ui="{ footer: 'justify-end' }">
-    <template #header>
-      <div v-if="appointment" class="flex items-center gap-3">
-        <UBadge :color="statusColor" size="sm" variant="subtle" class="gap-1.5">
-          <UIcon :name="statusIcon" class="size-4" />
-          {{ statusLabel }}
-        </UBadge>
+  <UModal
+    v-model:open="open"
+    :title="clientName"
+    :description="serviceName"
+    :ui="{ footer: 'justify-between' }"
+    :close-button="true"
+  >
+    <template #header="{ close }">
+      <div v-if="appointment" class="flex items-center justify-between w-full">
+        <div class="flex items-center gap-3 min-w-0">
+          <div
+            class="flex items-center justify-center size-10 rounded-xl bg-primary/10 text-primary shrink-0"
+          >
+            <UIcon name="i-lucide-user" class="size-5" />
+          </div>
+          <div class="min-w-0">
+            <p class="text-base font-semibold text-highlighted truncate">
+              {{ clientName }}
+            </p>
+            <p class="text-sm text-muted truncate">{{ serviceName }}</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <UBadge
+            :color="statusColor"
+            size="sm"
+            variant="subtle"
+            class="gap-1.5 shrink-0"
+          >
+            <UIcon :name="statusIcon" class="size-3.5" />
+            {{ statusLabel }}
+          </UBadge>
+          <UButton
+            :icon="'i-lucide-x'"
+            variant="link"
+            color="neutral"
+            size="md"
+            @click="close()"
+          />
+        </div>
       </div>
     </template>
 
     <template #body>
-      <div v-if="appointment" class="space-y-4 py-2">
+      <div v-if="appointment" class="space-y-5 py-1">
         <div v-if="!showCompleteForm">
-          <div class="p-4 rounded-lg bg-muted/50 space-y-3">
-            <div>
-              <p class="text-xs text-muted mb-1">Cliente</p>
-              <p class="text-base font-semibold text-highlighted">
-                {{ clientName }}
-              </p>
-              <p v-if="clientPhone" class="text-sm text-muted mt-0.5">
-                {{ clientPhone }}
-              </p>
-            </div>
-
-            <div>
-              <p class="text-xs text-muted mb-1">Servicio</p>
-              <p class="text-sm font-medium text-highlighted">
-                {{ serviceName }}
-              </p>
-            </div>
-
-            <div class="flex items-center gap-4">
-              <div>
-                <p class="text-xs text-muted mb-1">Fecha</p>
-                <p class="text-sm text-highlighted">{{ formattedDate }}</p>
+          <div class="space-y-4">
+            <div class="grid grid-cols-2 gap-3">
+              <div
+                class="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-muted"
+              >
+                <div
+                  class="flex items-center justify-center size-9 rounded-lg bg-primary/10 text-primary shrink-0"
+                >
+                  <UIcon name="i-lucide-calendar-days" class="size-4.5" />
+                </div>
+                <div class="min-w-0">
+                  <p class="text-xs text-muted">Fecha</p>
+                  <p class="text-sm font-medium text-highlighted truncate">
+                    {{ formattedDate }}
+                  </p>
+                </div>
               </div>
-              <div>
-                <p class="text-xs text-muted mb-1">Hora</p>
-                <p class="text-sm text-highlighted">{{ formattedTime }}</p>
+
+              <div
+                class="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-muted"
+              >
+                <div
+                  class="flex items-center justify-center size-9 rounded-lg bg-primary/10 text-primary shrink-0"
+                >
+                  <UIcon name="i-lucide-clock" class="size-4.5" />
+                </div>
+                <div class="min-w-0">
+                  <p class="text-xs text-muted">Hora</p>
+                  <p class="text-sm font-medium text-highlighted">
+                    {{ formattedTime }}
+                  </p>
+                </div>
               </div>
             </div>
 
-            <div v-if="displayPrice != null">
-              <p class="text-xs text-muted mb-1">Precio cobrado</p>
-              <p class="text-lg font-bold text-success">${{ displayPrice }}</p>
+            <div
+              v-if="clientPhone"
+              class="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-muted"
+            >
+              <div
+                class="flex items-center justify-center size-9 rounded-lg bg-info/10 text-info shrink-0"
+              >
+                <UIcon name="i-lucide-phone" class="size-4.5" />
+              </div>
+              <div class="min-w-0">
+                <p class="text-xs text-muted">Telefono</p>
+                <p class="text-sm font-medium text-highlighted">
+                  {{ clientPhone }}
+                </p>
+              </div>
             </div>
 
-            <div v-if="appointment.notes">
-              <p class="text-xs text-muted mb-1">Notas</p>
-              <p class="text-sm text-highlighted">{{ appointment.notes }}</p>
+            <div
+              v-if="displayPrice != null"
+              class="flex items-center gap-3 p-3 rounded-lg bg-success/5 border border-success/20"
+            >
+              <div
+                class="flex items-center justify-center size-9 rounded-lg bg-success/10 text-success shrink-0"
+              >
+                <UIcon name="i-lucide-dollar-sign" class="size-4.5" />
+              </div>
+              <div class="min-w-0">
+                <p class="text-xs text-muted">Precio cobrado</p>
+                <p class="text-lg font-bold text-success">
+                  ${{ displayPrice }}
+                </p>
+              </div>
+            </div>
+
+            <div
+              v-if="appointment.notes"
+              class="p-3 rounded-lg bg-muted/50 border border-muted"
+            >
+              <div class="flex items-center gap-2 mb-2">
+                <UIcon
+                  name="i-lucide-file-text"
+                  class="size-4 text-muted shrink-0"
+                />
+                <p
+                  class="text-xs text-muted font-medium uppercase tracking-wide"
+                >
+                  Notas
+                </p>
+              </div>
+              <p class="text-sm text-default leading-relaxed">
+                {{ appointment.notes }}
+              </p>
             </div>
           </div>
         </div>
 
         <div v-else class="space-y-4">
+          <div
+            class="flex items-center gap-2 p-3 rounded-lg bg-muted/30 border border-muted"
+          >
+            <UIcon name="i-lucide-info" class="size-4 text-muted shrink-0" />
+            <p class="text-sm text-muted">
+              Ingresa el precio final y las observaciones del servicio.
+            </p>
+          </div>
+
           <UFormField label="Precio final cobrado" required>
             <UInput
               v-model.number="completePrice"
@@ -281,12 +373,9 @@ function backToDetail() {
               step="0.01"
               placeholder="0.00"
               size="lg"
+              icon="i-lucide-dollar-sign"
               class="w-full"
-            >
-              <template #leading>
-                <span class="text-muted font-medium">$</span>
-              </template>
-            </UInput>
+            />
           </UFormField>
 
           <UFormField label="Notas de la cita">
@@ -302,8 +391,8 @@ function backToDetail() {
       </div>
     </template>
 
-    <template #footer>
-      <div v-if="appointment" class="flex gap-2 w-full">
+    <template #footer v-if="appointment">
+      <div class="flex gap-2 w-full">
         <template v-if="!showCompleteForm">
           <UButton
             v-if="canRemind(appointment.status)"

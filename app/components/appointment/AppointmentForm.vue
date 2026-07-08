@@ -142,6 +142,7 @@ function onSubmit(event: FormSubmitEvent<AppointmentSchema>) {
         v-model="state.client_id"
         :items="clientOptions"
         placeholder="Selecciona un cliente"
+        icon="i-lucide-user"
         class="w-full"
       />
     </UFormField>
@@ -151,12 +152,13 @@ function onSubmit(event: FormSubmitEvent<AppointmentSchema>) {
         v-model="state.service_id"
         :items="serviceOptions"
         placeholder="Selecciona un servicio"
+        icon="i-lucide-sparkles"
         class="w-full"
       />
     </UFormField>
 
     <UFormField name="date" label="Fecha y hora" required class="col-span-2">
-      <UInput v-model="state.date" type="datetime-local" class="w-full" />
+      <UInput v-model="state.date" type="datetime-local" icon="i-lucide-calendar" class="w-full" />
     </UFormField>
 
     <UFormField name="duration_minutes" label="Duración (min)" required>
@@ -164,6 +166,7 @@ function onSubmit(event: FormSubmitEvent<AppointmentSchema>) {
         v-model.number="state.duration_minutes"
         type="number"
         min="1"
+        icon="i-lucide-clock"
         class="w-full"
       />
     </UFormField>
@@ -175,6 +178,7 @@ function onSubmit(event: FormSubmitEvent<AppointmentSchema>) {
         min="0"
         step="0.01"
         placeholder="0.00"
+        icon="i-lucide-dollar-sign"
         class="w-full"
       />
     </UFormField>
