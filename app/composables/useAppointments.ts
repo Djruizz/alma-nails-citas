@@ -226,6 +226,46 @@ export function useAppointments() {
     }
   };
 
+  const calendarAppointments = useState<Record<string, AppointmentWithRelations[]>>(
+    "calendar-appointments",
+    () => ({}),
+  );
+  const calendarStatus = useState<"idle" | "pending" | "success" | "error">(
+    "calendar-appointments-status",
+    () => "idle",
+  );
+
+  const fetchAppointmentsByRange = async (startISO: string, endISO: string) => {
+    calendarStatus.value = "pending";
+    const { data, error } = await supabase
+      .from("appointments")
+      .select("*, clients(*), services(*)")
+      .gte("date", startISO)
+      .lt("date", endISO)
+      .order("date", { ascending: true });
+
+    if (error) {
+      calendarStatus.value = "error";
+      throw error;
+    }
+
+    const grouped: Record<string, AppointmentWithRelations[]> = {};
+    for (const apt of (data || []) as AppointmentWithRelations[]) {
+      const d = new Date(apt.date);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      if (!grouped[key]) grouped[key] = [];
+      grouped[key].push(apt);
+    }
+
+    calendarAppointments.value = grouped;
+    calendarStatus.value = "success";
+  };
+
+  const refreshCalendar = async (startISO: string, endISO: string) => {
+    calendarStatus.value = "idle";
+    await fetchAppointmentsByRange(startISO, endISO);
+  };
+
   const remindViaWhatsApp = (appointment: AppointmentWithRelations) => {
     const phone = appointment.clients?.phone;
     if (!phone) {
@@ -260,10 +300,14 @@ export function useAppointments() {
     currentFilter,
     hasMore,
     isLoadingMore,
+    calendarAppointments,
+    calendarStatus,
     fetchAppointments,
     loadMore,
     refresh,
     setFilter,
+    fetchAppointmentsByRange,
+    refreshCalendar,
     createAppointment,
     updateAppointment,
     cancelAppointment,

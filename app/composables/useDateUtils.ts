@@ -61,11 +61,77 @@ export function useDateUtils() {
     return date.toLocaleString("es-ES", { ...defaultOptions, ...options });
   };
 
+  const startOfMonth = (date: Date): Date => {
+    return new Date(date.getFullYear(), date.getMonth(), 1);
+  };
+
+  const endOfMonth = (date: Date): Date => {
+    return new Date(date.getFullYear(), date.getMonth() + 1, 0);
+  };
+
+  const startOfWeek = (date: Date): Date => {
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    d.setDate(diff);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  };
+
+  const endOfWeek = (date: Date): Date => {
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = d.getDate() + (day === 0 ? 0 : 7 - day);
+    d.setDate(diff);
+    d.setHours(23, 59, 59, 999);
+    return d;
+  };
+
+  const toISODateKey = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  const addDays = (date: Date, days: number): Date => {
+    const d = new Date(date);
+    d.setDate(d.getDate() + days);
+    return d;
+  };
+
+  const addMonths = (date: Date, months: number): Date => {
+    const d = new Date(date);
+    d.setMonth(d.getMonth() + months);
+    return d;
+  };
+
+  const isSameDay = (date1: Date, date2: Date): boolean => {
+    return (
+      date1.getFullYear() === date2.getFullYear() &&
+      date1.getMonth() === date2.getMonth() &&
+      date1.getDate() === date2.getDate()
+    );
+  };
+
+  const isToday = (date: Date): boolean => {
+    return isSameDay(date, new Date());
+  };
+
   return {
     toDatetimeLocal,
     fromDatetimeLocal,
     formatDate,
     formatTime,
     formatDateTime,
+    startOfMonth,
+    endOfMonth,
+    startOfWeek,
+    endOfWeek,
+    toISODateKey,
+    addDays,
+    addMonths,
+    isSameDay,
+    isToday,
   };
 }
