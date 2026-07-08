@@ -13,7 +13,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   edit: [appointment: AppointmentWithRelations];
-  cancel: [appointment: AppointmentWithRelations];
+  detail: [appointment: AppointmentWithRelations];
 }>();
 </script>
 
@@ -39,7 +39,7 @@ const emit = defineEmits<{
       :appointment="appointment"
       show-actions
       @edit="emit('edit', $event)"
-      @cancel="emit('cancel', $event)"
+      @detail="emit('detail', $event)"
     />
   </div>
 </template>

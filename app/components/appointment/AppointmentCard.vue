@@ -14,8 +14,11 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   edit: [appointment: AppointmentWithRelations];
-  cancel: [appointment: AppointmentWithRelations];
+  detail: [appointment: AppointmentWithRelations];
 }>();
+
+const { getStatusColor, getStatusLabel, getStatusIcon, canCancel, canConfirm } = useAppointmentStatus();
+const { formatDate, formatTime } = useDateUtils();
 
 const clientName = computed(
   () => props.appointment.clients?.name || "Sin cliente",
@@ -26,8 +29,7 @@ const serviceName = computed(
 );
 
 const formattedDate = computed(() => {
-  const date = new Date(props.appointment.date);
-  return date.toLocaleDateString("es-ES", {
+  return formatDate(props.appointment.date, {
     weekday: "short",
     day: "numeric",
     month: "short",
@@ -36,77 +38,53 @@ const formattedDate = computed(() => {
 });
 
 const formattedTime = computed(() => {
-  const date = new Date(props.appointment.date);
-  return date.toLocaleTimeString("es-ES", {
+  return formatTime(props.appointment.date, {
     hour: "2-digit",
     minute: "2-digit",
   });
 });
 
 const statusColor = computed(() => {
-  switch (props.appointment.status) {
-    case "PENDING":
-      return "warning";
-    case "CONFIRMED":
-      return "info";
-    case "COMPLETED":
-      return "success";
-    case "CANCELED":
-      return "error";
-    default:
-      return "neutral";
-  }
+  return getStatusColor(props.appointment.status);
 });
 
 const statusLabel = computed(() => {
-  switch (props.appointment.status) {
-    case "PENDING":
-      return "Pendiente";
-    case "CONFIRMED":
-      return "Confirmada";
-    case "COMPLETED":
-      return "Completada";
-    case "CANCELED":
-      return "Cancelada";
-    default:
-      return props.appointment.status;
-  }
+  return getStatusLabel(props.appointment.status);
 });
 
 const statusIcon = computed(() => {
-  switch (props.appointment.status) {
-    case "PENDING":
-      return "i-lucide-clock";
-    case "CONFIRMED":
-      return "i-lucide-check-circle";
-    case "COMPLETED":
-      return "i-lucide-check-check";
-    case "CANCELED":
-      return "i-lucide-x-circle";
-    default:
-      return "i-lucide-help-circle";
-  }
+  return getStatusIcon(props.appointment.status);
 });
 
-const items = computed<DropdownMenuItem[][]>(() => [
-  [
-    {
-      label: "Editar",
-      icon: "i-lucide-pencil",
-      onSelect: () => emit("edit", props.appointment),
-    },
-    {
-      label: "Cancelar cita",
-      icon: "i-lucide-x-circle",
-      color: "error",
-      onSelect: () => emit("cancel", props.appointment),
-    },
-  ],
-]);
+const items = computed<DropdownMenuItem[][]>(() => {
+  const status = props.appointment.status;
+  const menuItems: DropdownMenuItem[][] = [];
+
+  if (canCancel(status) || canConfirm(status)) {
+    menuItems.push([
+      {
+        label: "Editar",
+        icon: "i-lucide-pencil",
+        onSelect: () => emit("edit", props.appointment),
+      },
+    ]);
+  }
+
+  return menuItems;
+});
+
+function onCardClick() {
+  emit("detail", props.appointment);
+}
 </script>
 
 <template>
-  <UCard class="overflow-hidden w-full" variant="subtle" :ui="{ body: 'p-4' }">
+  <UCard
+    class="overflow-hidden w-full cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all"
+    variant="subtle"
+    :ui="{ body: 'p-4' }"
+    @click="onCardClick"
+  >
     <div class="flex justify-between items-start gap-4">
       <div class="flex items-start gap-4 flex-1 min-w-0">
         <div
@@ -149,21 +127,16 @@ const items = computed<DropdownMenuItem[][]>(() => [
           </div>
         </div>
       </div>
-      <UDropdownMenu v-if="showActions" :items="items">
+      <UDropdownMenu v-if="showActions && items.length > 0" :items="items">
         <UButton
           icon="i-lucide-ellipsis-vertical"
           size="sm"
           variant="link"
           color="neutral"
           class="cursor-pointer shrink-0"
+          @click.stop
         />
       </UDropdownMenu>
-    </div>
-
-    <div v-if="appointment.notes" class="mt-3 pt-3 border-t border-default">
-      <p class="text-xs text-dimmed line-clamp-2">
-        {{ appointment.notes }}
-      </p>
     </div>
   </UCard>
 </template>

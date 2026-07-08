@@ -14,6 +14,7 @@ type StatusFilter = "ALL" | "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELED";
 
 export function useAppointments() {
   const supabase = useSupabaseClient();
+  const { isValidStatusTransition } = useAppointmentStatus();
 
   const appointments = useState<AppointmentWithRelations[]>(
     "appointments",
@@ -36,7 +37,7 @@ export function useAppointments() {
     let query = supabase
       .from("appointments")
       .select("*, clients(*), services(*)", { count: "exact" })
-      .order("date", { ascending: true })
+      .order("date", { ascending: false })
       .range(off, off + lim - 1);
 
     if (filter !== "ALL") {
@@ -47,12 +48,18 @@ export function useAppointments() {
   };
 
   const fetchAppointments = async (filter?: StatusFilter) => {
+    const previousFilter = currentFilter.value;
+
     if (filter !== undefined) {
       currentFilter.value = filter;
     }
+
+    const filterChanged = filter !== undefined && filter !== previousFilter;
+
     if (
       status.value === "success" &&
       appointments.value.length > 0 &&
+      !filterChanged &&
       (filter === undefined || filter === currentFilter.value)
     ) {
       return;
@@ -99,6 +106,7 @@ export function useAppointments() {
   };
 
   const refresh = async () => {
+    status.value = "idle";
     await fetchAppointments(currentFilter.value);
   };
 
@@ -136,11 +144,114 @@ export function useAppointments() {
   };
 
   const cancelAppointment = async (id: string) => {
-    const { error } = await supabase
+    const appointment = appointments.value.find((a) => a.id === id);
+    if (!appointment) {
+      throw new Error("Cita no encontrada");
+    }
+
+    if (!isValidStatusTransition(appointment.status, "CANCELED")) {
+      throw new Error("No se puede cancelar esta cita en su estado actual");
+    }
+
+    const { data, error } = await supabase
       .from("appointments")
-      .update({ status: "CANCELED" })
-      .eq("id", id);
+      .update({ status: "CANCELED", updated_at: new Date().toISOString() })
+      .eq("id", id)
+      .select("*, clients(*), services(*)")
+      .single();
+
     if (error) throw error;
+
+    if (data) {
+      const idx = appointments.value.findIndex((a) => a.id === id);
+      if (idx !== -1) appointments.value[idx] = data;
+    }
+  };
+
+  const confirmAppointment = async (id: string) => {
+    const appointment = appointments.value.find((a) => a.id === id);
+    if (!appointment) {
+      throw new Error("Cita no encontrada");
+    }
+
+    if (!isValidStatusTransition(appointment.status, "CONFIRMED")) {
+      throw new Error("No se puede confirmar esta cita en su estado actual");
+    }
+
+    const { data, error } = await supabase
+      .from("appointments")
+      .update({ status: "CONFIRMED", updated_at: new Date().toISOString() })
+      .eq("id", id)
+      .select("*, clients(*), services(*)")
+      .single();
+
+    if (error) throw error;
+
+    if (data) {
+      const idx = appointments.value.findIndex((a) => a.id === id);
+      if (idx !== -1) appointments.value[idx] = data;
+    }
+  };
+
+  const completeAppointment = async (
+    id: string,
+    payload: { price: number; notes?: string },
+  ) => {
+    const appointment = appointments.value.find((a) => a.id === id);
+    if (!appointment) {
+      throw new Error("Cita no encontrada");
+    }
+
+    if (!isValidStatusTransition(appointment.status, "COMPLETED")) {
+      throw new Error("No se puede completar esta cita en su estado actual");
+    }
+
+    const { data, error } = await supabase
+      .from("appointments")
+      .update({
+        status: "COMPLETED",
+        price: payload.price,
+        notes: payload.notes,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id)
+      .select("*, clients(*), services(*)")
+      .single();
+
+    if (error) throw error;
+
+    if (data) {
+      const idx = appointments.value.findIndex((a) => a.id === id);
+      if (idx !== -1) appointments.value[idx] = data;
+    }
+  };
+
+  const remindViaWhatsApp = (appointment: AppointmentWithRelations) => {
+    const phone = appointment.clients?.phone;
+    if (!phone) {
+      throw new Error("El cliente no tiene número de teléfono");
+    }
+
+    const { formatDate, formatTime } = useDateUtils();
+
+    const clientName = appointment.clients?.name || "Cliente";
+    const formattedDate = formatDate(appointment.date, {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+    });
+    const formattedTime = formatTime(appointment.date, {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    const serviceName = appointment.services?.name || "servicio";
+
+    const message = `Hola ${clientName}! Te recordamos tu cita de ${serviceName} el ${formattedDate} a las ${formattedTime}. Por favor confirma tu asistencia. ¡Gracias!`;
+
+    const cleanPhone = phone.replace(/\D/g, "");
+    const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+
+    window.open(whatsappUrl, "_blank");
   };
 
   return {
@@ -156,5 +267,8 @@ export function useAppointments() {
     createAppointment,
     updateAppointment,
     cancelAppointment,
+    confirmAppointment,
+    completeAppointment,
+    remindViaWhatsApp,
   };
 }

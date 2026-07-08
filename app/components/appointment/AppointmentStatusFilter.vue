@@ -8,31 +8,31 @@ const statusFilters = [
     label: "Todas",
     value: "ALL" as const,
     icon: "i-lucide-list",
-    color: "neutral",
+    iconColor: "text-neutral-500",
   },
   {
     label: "Pendientes",
     value: "PENDING" as const,
     icon: "i-lucide-clock",
-    color: "warning",
+    iconColor: "text-yellow-500",
   },
   {
     label: "Confirmadas",
     value: "CONFIRMED" as const,
     icon: "i-lucide-check-circle",
-    color: "info",
+    iconColor: "text-blue-500",
   },
   {
     label: "Completadas",
     value: "COMPLETED" as const,
     icon: "i-lucide-check-check",
-    color: "success",
+    iconColor: "text-green-500",
   },
   {
     label: "Canceladas",
     value: "CANCELED" as const,
     icon: "i-lucide-x-circle",
-    color: "error",
+    iconColor: "text-red-500",
   },
 ];
 
@@ -55,12 +55,12 @@ const currentFilter = computed(
         <UIcon
           :name="currentFilter?.icon || ''"
           class="size-4"
-          :class="`text-${currentFilter?.color || ''}`"
+          :class="currentFilter?.iconColor || ''"
         />
       </template>
       <template #item="{ item }">
         <div class="flex items-center gap-2">
-          <UIcon :name="item.icon" class="size-4" />
+          <UIcon :name="item.icon" class="size-4" :class="item.iconColor" />
           <span>{{ item.label }}</span>
         </div>
       </template>

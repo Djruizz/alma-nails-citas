@@ -40,7 +40,7 @@ const modal = reactive({
   appointment: null as AppointmentWithRelations | null,
 });
 
-const cancelModal = reactive({
+const detailModal = reactive({
   open: false,
   appointment: null as AppointmentWithRelations | null,
 });
@@ -57,9 +57,9 @@ function openEdit(appointment: AppointmentWithRelations) {
   modal.open = true;
 }
 
-function openCancel(appointment: AppointmentWithRelations) {
-  cancelModal.appointment = appointment;
-  cancelModal.open = true;
+function openDetail(appointment: AppointmentWithRelations) {
+  detailModal.appointment = appointment;
+  detailModal.open = true;
 }
 </script>
 
@@ -97,7 +97,7 @@ function openCancel(appointment: AppointmentWithRelations) {
       :appointments="appointments"
       :loading="status === 'pending'"
       @edit="openEdit"
-      @cancel="openCancel"
+      @detail="openDetail"
     />
 
     <div v-if="hasMore" class="flex items-center justify-center py-4">
@@ -116,9 +116,9 @@ function openCancel(appointment: AppointmentWithRelations) {
       :appointment="modal.appointment ?? undefined"
     />
 
-    <AppointmentDeleteModal
-      v-model:open="cancelModal.open"
-      :appointment="cancelModal.appointment ?? undefined"
+    <AppointmentDetailModal
+      v-model:open="detailModal.open"
+      :appointment="detailModal.appointment ?? undefined"
     />
   </div>
 </template>

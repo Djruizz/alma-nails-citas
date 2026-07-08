@@ -17,6 +17,7 @@ const emit = defineEmits<{
 
 const { clients, fetchClients } = useClients();
 const { services, fetchServices } = useServices();
+const { toDatetimeLocal, fromDatetimeLocal } = useDateUtils();
 
 const supabase = useSupabaseClient();
 
@@ -83,12 +84,6 @@ const state = reactive<AppointmentSchema>({
 
 const formRef = useTemplateRef<{ clearErrors: () => void }>("formRef");
 
-function toDatetimeLocal(iso: string): string {
-  const d = new Date(iso);
-  const pad = (n: number) => n.toString().padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-
 watch(
   () => props.appointment,
   (val) => {
@@ -103,29 +98,29 @@ watch(
   { immediate: true },
 );
 
-const clientOptions = computed(() =>
-  allClients.value.map((c) => ({
+const clientOptions = computed(() => {
+  return allClients.value.map((c) => ({
     label: c.is_active ? c.name : `${c.name} (eliminado)`,
     value: c.id,
     disabled: !c.is_active && c.id !== props.appointment?.client_id,
-  })),
-);
+  }));
+});
 
-const serviceOptions = computed(() =>
-  allServices.value.map((s) => ({
+const serviceOptions = computed(() => {
+  return allServices.value.map((s) => ({
     label: s.is_active
       ? `${s.name} - $${s.price}`
       : `${s.name} - $${s.price} (eliminado)`,
     value: s.id,
     disabled: !s.is_active && s.id !== props.appointment?.service_id,
-  })),
-);
+  }));
+});
 
 function onSubmit(event: FormSubmitEvent<AppointmentSchema>) {
   emit("submit", {
     client_id: event.data.client_id,
     service_id: event.data.service_id,
-    date: event.data.date,
+    date: fromDatetimeLocal(event.data.date),
     duration_minutes: event.data.duration_minutes,
     price: event.data.price,
     notes: event.data.notes?.trim(),
