@@ -15,6 +15,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   edit: [appointment: AppointmentWithRelations];
   detail: [appointment: AppointmentWithRelations];
+  delete: [appointment: AppointmentWithRelations];
 }>();
 
 const { getStatusColor, getStatusLabel, getStatusIcon, canCancel, canConfirm } =
@@ -75,12 +76,32 @@ const items = computed<DropdownMenuItem[][]>(() => {
   const status = props.appointment.status;
   const menuItems: DropdownMenuItem[][] = [];
 
-  if (canCancel(status) || canConfirm(status)) {
+  if (status !== "CANCELED" && status !== "COMPLETED") {
     menuItems.push([
       {
         label: "Editar",
         icon: "i-lucide-pencil",
         onSelect: () => emit("edit", props.appointment),
+      },
+    ]);
+  }
+  if (needsFollowUp.value) {
+    menuItems.push([
+      {
+        label: "Seguimiento",
+        icon: "i-lucide-message-circle",
+        color: "primary",
+        onSelect: () => followUpViaWhatsApp(props.appointment),
+      },
+    ]);
+  }
+  if (status !== "COMPLETED") {
+    menuItems.push([
+      {
+        label: "Eliminar",
+        icon: "i-lucide-trash-2",
+        color: "error",
+        onSelect: () => emit("delete", props.appointment),
       },
     ]);
   }

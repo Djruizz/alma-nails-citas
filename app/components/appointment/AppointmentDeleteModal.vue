@@ -12,18 +12,18 @@ const props = defineProps<{
 
 const open = defineModel<boolean>("open", { default: false });
 
-const { cancelAppointment } = useAppointments();
+const { deleteAppointment } = useAppointments();
 const toast = useToast();
 
-const canceling = ref(false);
+const deleting = ref(false);
 
 async function onConfirm() {
   if (!props.appointment) return;
-  canceling.value = true;
+  deleting.value = true;
   try {
-    await cancelAppointment(props.appointment.id);
+    await deleteAppointment(props.appointment.id);
     toast.add({
-      title: "Cita cancelada",
+      title: "Cita eliminada",
       color: "success",
       icon: "i-lucide-check-circle",
     });
@@ -36,7 +36,7 @@ async function onConfirm() {
       icon: "i-lucide-alert-circle",
     });
   } finally {
-    canceling.value = false;
+    deleting.value = false;
   }
 }
 </script>
@@ -44,7 +44,7 @@ async function onConfirm() {
 <template>
   <UModal
     v-model:open="open"
-    title="Cancelar cita"
+    title="Eliminar cita"
     :ui="{ footer: 'justify-end' }"
   >
     <template #body>
@@ -57,10 +57,10 @@ async function onConfirm() {
 
         <div class="space-y-2">
           <p class="text-base font-semibold text-highlighted">
-            ¿Estás seguro de cancelar esta cita?
+            ¿Estás seguro de eliminar esta cita?
           </p>
           <p class="text-sm text-muted max-w-sm">
-            Esta acción marcará la cita como cancelada. No se puede deshacer.
+            Esta acción eliminará la cita permanentemente. No se puede deshacer.
           </p>
         </div>
 
@@ -78,10 +78,10 @@ async function onConfirm() {
         @click="close"
       />
       <UButton
-        label="Cancelar cita"
+        label="Eliminar"
         color="error"
-        icon="i-lucide-x-circle"
-        :loading="canceling"
+        icon="i-lucide-trash-2"
+        :loading="deleting"
         @click="onConfirm"
       />
     </template>

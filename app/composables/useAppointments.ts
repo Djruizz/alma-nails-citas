@@ -414,6 +414,16 @@ export function useAppointments() {
     window.open(whatsappUrl, "_blank");
   };
 
+  const deleteAppointment = async (id: string) => {
+    const { error } = await supabase
+      .from("appointments")
+      .delete()
+      .eq("id", id);
+    if (error) throw error;
+    removeFromMap(id);
+    listIdsOrder.value = listIdsOrder.value.filter((listId) => listId !== id);
+  };
+
   // Exposed for potential future hard-delete flows
   // removeFromMap is not currently exported to keep the public API minimal
 
@@ -434,6 +444,7 @@ export function useAppointments() {
     createAppointment,
     updateAppointment,
     cancelAppointment,
+    deleteAppointment,
     confirmAppointment,
     completeAppointment,
     remindViaWhatsApp,

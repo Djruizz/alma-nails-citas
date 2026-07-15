@@ -43,6 +43,11 @@ const detailModal = reactive({
   appointment: null as AppointmentWithRelations | null,
 });
 
+const deleteModal = reactive({
+  open: false,
+  appointment: null as AppointmentWithRelations | null,
+});
+
 function openCreate() {
   modal.mode = "create";
   modal.appointment = null;
@@ -58,6 +63,11 @@ function openEdit(appointment: AppointmentWithRelations) {
 function openDetail(appointment: AppointmentWithRelations) {
   detailModal.appointment = appointment;
   detailModal.open = true;
+}
+
+function openDelete(appointment: AppointmentWithRelations) {
+  deleteModal.appointment = appointment;
+  deleteModal.open = true;
 }
 </script>
 
@@ -96,6 +106,7 @@ function openDetail(appointment: AppointmentWithRelations) {
       :loading="status === 'pending'"
       @edit="openEdit"
       @detail="openDetail"
+      @delete="openDelete"
     />
 
     <div v-if="hasMore" class="flex items-center justify-center py-4">
@@ -117,6 +128,11 @@ function openDetail(appointment: AppointmentWithRelations) {
     <AppointmentDetailModal
       v-model:open="detailModal.open"
       :appointment="detailModal.appointment ?? undefined"
+    />
+
+    <AppointmentDeleteModal
+      v-model:open="deleteModal.open"
+      :appointment="deleteModal.appointment ?? undefined"
     />
   </div>
 </template>

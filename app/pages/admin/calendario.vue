@@ -54,6 +54,11 @@ const detailModal = reactive({
   appointment: null as AppointmentWithRelations | null,
 });
 
+const deleteModal = reactive({
+  open: false,
+  appointment: null as AppointmentWithRelations | null,
+});
+
 function openCreateForDate(date: Date) {
   modal.mode = "create";
   modal.appointment = {
@@ -65,6 +70,11 @@ function openCreateForDate(date: Date) {
 function openDetail(appointment: AppointmentWithRelations) {
   detailModal.appointment = appointment;
   detailModal.open = true;
+}
+
+function openDelete(appointment: AppointmentWithRelations) {
+  deleteModal.appointment = appointment;
+  deleteModal.open = true;
 }
 
 function onSelectDay(date: Date) {
@@ -150,6 +160,7 @@ watch(
         v-if="selectedDay"
         :day="selectedDay"
         @select-appointment="onSelectAppointment"
+        @delete-appointment="openDelete"
         @create-for-date="openCreateForDate"
         @clear="clearSelectedDay"
       />
@@ -164,6 +175,10 @@ watch(
     <AppointmentDetailModal
       v-model:open="detailModal.open"
       :appointment="detailModal.appointment ?? undefined"
+    />
+    <AppointmentDeleteModal
+      v-model:open="deleteModal.open"
+      :appointment="deleteModal.appointment ?? undefined"
     />
   </div>
 </template>

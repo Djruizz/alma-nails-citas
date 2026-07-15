@@ -13,6 +13,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   selectAppointment: [appointment: AppointmentWithRelations];
+  deleteAppointment: [appointment: AppointmentWithRelations];
   createForDate: [date: Date];
   clear: [];
 }>();
@@ -37,7 +38,8 @@ const formattedDate = computed(() => {
           {{ formattedDate }}
         </h3>
         <p class="text-sm text-muted">
-          {{ day.appointments.length }} {{ day.appointments.length === 1 ? "cita" : "citas" }}
+          {{ day.appointments.length }}
+          {{ day.appointments.length === 1 ? "cita" : "citas" }}
         </p>
       </div>
       <div class="flex items-center gap-2">
@@ -58,7 +60,10 @@ const formattedDate = computed(() => {
     </div>
 
     <div v-if="day.appointments.length === 0" class="text-center py-6">
-      <UIcon name="i-lucide-calendar-x" class="size-8 text-muted mx-auto mb-2" />
+      <UIcon
+        name="i-lucide-calendar-x"
+        class="size-8 text-muted mx-auto mb-2"
+      />
       <p class="text-sm text-muted">Sin citas para este día</p>
     </div>
 
@@ -68,6 +73,8 @@ const formattedDate = computed(() => {
         :key="apt.id"
         :appointment="apt"
         @detail="emit('selectAppointment', apt)"
+        @delete="emit('deleteAppointment', apt)"
+        show-actions
       />
     </div>
   </div>
