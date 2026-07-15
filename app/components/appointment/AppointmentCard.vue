@@ -18,7 +18,7 @@ const emit = defineEmits<{
   delete: [appointment: AppointmentWithRelations];
 }>();
 
-const { getStatusColor, getStatusLabel, getStatusIcon, canCancel, canConfirm } =
+const { getStatusColor, getStatusIcon, canCancel, canConfirm } =
   useAppointmentStatus();
 const { formatDate, formatTime, isWeeksOrMoreAgo, weeksSince } = useDateUtils();
 const { followUpViaWhatsApp } = useAppointments();
@@ -51,12 +51,19 @@ const statusColor = computed(() => {
   return getStatusColor(props.appointment.status);
 });
 
-const statusLabel = computed(() => {
-  return getStatusLabel(props.appointment.status);
-});
-
 const statusIcon = computed(() => {
   return getStatusIcon(props.appointment.status);
+});
+
+const statusIconClasses = computed(() => {
+  const map: Record<string, string> = {
+    warning: "bg-warning/10 text-warning",
+    info: "bg-info/10 text-info",
+    success: "bg-success/10 text-success",
+    error: "bg-error/10 text-error",
+    neutral: "bg-neutral/10 text-neutral",
+  };
+  return map[statusColor.value] || "bg-primary/10 text-primary";
 });
 
 const needsFollowUp = computed(() => {
@@ -85,7 +92,7 @@ const items = computed<DropdownMenuItem[][]>(() => {
       },
     ]);
   }
-  if (needsFollowUp.value) {
+  if (needsFollowUp.value && props.appointment.clients?.phone) {
     menuItems.push([
       {
         label: "Seguimiento",
@@ -133,9 +140,10 @@ function onWhatsAppClick(event: Event) {
     <div class="flex justify-between items-start gap-4">
       <div class="flex items-start gap-4 flex-1 min-w-0">
         <div
-          class="flex items-center justify-center size-12 rounded-xl bg-primary/10 text-primary shrink-0"
+          class="flex items-center justify-center size-12 rounded-xl shrink-0"
+          :class="statusIconClasses"
         >
-          <UIcon name="i-lucide-calendar" class="size-6" />
+          <UIcon :name="statusIcon" class="size-6" />
         </div>
 
         <div class="min-w-0 flex-1">
@@ -144,23 +152,13 @@ function onWhatsAppClick(event: Event) {
               {{ clientName }}
             </p>
             <UBadge
-              :color="statusColor"
-              size="sm"
-              variant="subtle"
-              class="gap-1"
-            >
-              <UIcon :name="statusIcon" class="size-3" />
-              {{ statusLabel }}
-            </UBadge>
-            <UBadge
               v-if="needsFollowUp"
               size="sm"
               variant="subtle"
-              class="gap-1 bg-purple-400/10 text-purple-500"
-            >
-              <UIcon name="i-lucide-bell-ring" class="size-3" />
-              {{ weeksAgoText }}
-            </UBadge>
+              color="primary"
+              icon="i-lucide-bell-ring"
+              :label="weeksAgoText"
+            />
           </div>
           <p class="text-sm text-muted truncate">{{ serviceName }}</p>
           <div class="flex items-center gap-3 mt-2">
@@ -182,14 +180,6 @@ function onWhatsAppClick(event: Event) {
         </div>
       </div>
       <div class="flex items-center gap-2 shrink-0">
-        <UButton
-          v-if="needsFollowUp && appointment.clients?.phone"
-          icon="i-lucide-message-circle"
-          size="sm"
-          variant="soft"
-          class="cursor-pointer bg-purple-400/10 text-purple-500"
-          @click="onWhatsAppClick"
-        />
         <UDropdownMenu v-if="showActions && items.length > 0" :items="items">
           <UButton
             icon="i-lucide-ellipsis-vertical"

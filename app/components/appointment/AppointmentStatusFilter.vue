@@ -1,5 +1,11 @@
 <script setup lang="ts">
-type StatusFilter = "ALL" | "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELED" | "REMEMBER";
+type StatusFilter =
+  | "ALL"
+  | "PENDING"
+  | "CONFIRMED"
+  | "COMPLETED"
+  | "CANCELED"
+  | "REMEMBER";
 
 const modelValue = defineModel<StatusFilter>({ default: "ALL" });
 
@@ -38,7 +44,7 @@ const statusFilters = [
     label: "Recordar",
     value: "REMEMBER" as const,
     icon: "i-lucide-bell-ring",
-    iconColor: "text-purple-500",
+    iconColor: "text-primary",
   },
 ];
 
