@@ -414,6 +414,31 @@ export function useAppointments() {
     window.open(whatsappUrl, "_blank");
   };
 
+  const restoreAppointment = async (id: string) => {
+    const appointment = findAppointment(id);
+    if (!appointment) {
+      throw new Error("Cita no encontrada");
+    }
+
+    if (!isValidStatusTransition(appointment.status, "PENDING")) {
+      throw new Error("No se puede recuperar esta cita en su estado actual");
+    }
+
+    const { data, error } = await supabase
+      .from("appointments")
+      .update({ status: "PENDING", updated_at: new Date().toISOString() })
+      .eq("id", id)
+      .select("*, clients(*), services(*)")
+      .single();
+
+    if (error) throw error;
+
+    if (data) {
+      mergeIntoMap([data as AppointmentWithRelations]);
+      removeFromListIfNotMatching(id, data as AppointmentWithRelations);
+    }
+  };
+
   const deleteAppointment = async (id: string) => {
     const { error } = await supabase
       .from("appointments")
@@ -444,6 +469,7 @@ export function useAppointments() {
     createAppointment,
     updateAppointment,
     cancelAppointment,
+    restoreAppointment,
     deleteAppointment,
     confirmAppointment,
     completeAppointment,

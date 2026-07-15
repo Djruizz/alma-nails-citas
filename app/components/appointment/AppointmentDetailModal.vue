@@ -16,6 +16,7 @@ const {
   confirmAppointment,
   completeAppointment,
   cancelAppointment,
+  restoreAppointment,
   remindViaWhatsApp,
 } = useAppointments();
 const {
@@ -26,6 +27,7 @@ const {
   canConfirm,
   canComplete,
   canRemind,
+  canRestore,
 } = useAppointmentStatus();
 const { formatDate, formatTime } = useDateUtils();
 const toast = useToast();
@@ -33,6 +35,7 @@ const toast = useToast();
 const completing = ref(false);
 const canceling = ref(false);
 const confirming = ref(false);
+const restoring = ref(false);
 
 const showCompleteForm = ref(false);
 const completePrice = ref(0);
@@ -210,6 +213,30 @@ function startComplete() {
 
 function backToDetail() {
   showCompleteForm.value = false;
+}
+
+async function onRestore() {
+  if (!props.appointment) return;
+  restoring.value = true;
+  try {
+    await restoreAppointment(props.appointment.id);
+    toast.add({
+      title: "Cita recuperada",
+      description: "La cita ha sido restaurada como pendiente",
+      color: "success",
+      icon: "i-lucide-rotate-ccw",
+    });
+    open.value = false;
+  } catch (err: any) {
+    toast.add({
+      title: "Error",
+      description: err?.message || "Ocurrió un error inesperado",
+      color: "error",
+      icon: "i-lucide-alert-circle",
+    });
+  } finally {
+    restoring.value = false;
+  }
 }
 </script>
 
@@ -400,6 +427,16 @@ function backToDetail() {
           />
 
           <div class="flex-1" />
+
+          <UButton
+            v-if="canRestore(appointment.status)"
+            label="Recuperar"
+            icon="i-lucide-rotate-ccw"
+            color="success"
+            variant="soft"
+            :loading="restoring"
+            @click="onRestore"
+          />
 
           <UButton
             v-if="canCancel(appointment.status)"

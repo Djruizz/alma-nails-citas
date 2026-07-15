@@ -15,6 +15,7 @@ const emit = defineEmits<{
   edit: [appointment: AppointmentWithRelations];
   detail: [appointment: AppointmentWithRelations];
   delete: [appointment: AppointmentWithRelations];
+  restore: [appointment: AppointmentWithRelations];
 }>();
 </script>
 
@@ -42,6 +43,7 @@ const emit = defineEmits<{
       @edit="emit('edit', $event)"
       @detail="emit('detail', $event)"
       @delete="emit('delete', $event)"
+      @restore="emit('restore', $event)"
     />
   </div>
 </template>

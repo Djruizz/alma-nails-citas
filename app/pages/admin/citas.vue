@@ -13,7 +13,10 @@ const {
   fetchAppointments,
   loadMore,
   setFilter,
+  restoreAppointment,
 } = useAppointments();
+
+const toast = useToast();
 
 type AppointmentWithRelations = Tables<"appointments"> & {
   clients?: Tables<"clients"> | null;
@@ -69,6 +72,25 @@ function openDelete(appointment: AppointmentWithRelations) {
   deleteModal.appointment = appointment;
   deleteModal.open = true;
 }
+
+async function onRestore(appointment: AppointmentWithRelations) {
+  try {
+    await restoreAppointment(appointment.id);
+    toast.add({
+      title: "Cita recuperada",
+      description: "La cita ha sido restaurada como pendiente",
+      color: "success",
+      icon: "i-lucide-rotate-ccw",
+    });
+  } catch (err: any) {
+    toast.add({
+      title: "Error",
+      description: err?.message || "Ocurrió un error inesperado",
+      color: "error",
+      icon: "i-lucide-alert-circle",
+    });
+  }
+}
 </script>
 
 <template>
@@ -107,6 +129,7 @@ function openDelete(appointment: AppointmentWithRelations) {
       @edit="openEdit"
       @detail="openDetail"
       @delete="openDelete"
+      @restore="onRestore"
     />
 
     <div v-if="hasMore" class="flex items-center justify-center py-4">

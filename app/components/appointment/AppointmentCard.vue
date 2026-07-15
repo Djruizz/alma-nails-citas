@@ -16,6 +16,7 @@ const emit = defineEmits<{
   edit: [appointment: AppointmentWithRelations];
   detail: [appointment: AppointmentWithRelations];
   delete: [appointment: AppointmentWithRelations];
+  restore: [appointment: AppointmentWithRelations];
 }>();
 
 const { getStatusColor, getStatusIcon, canCancel, canConfirm } =
@@ -109,6 +110,16 @@ const items = computed<DropdownMenuItem[][]>(() => {
         icon: "i-lucide-trash-2",
         color: "error",
         onSelect: () => emit("delete", props.appointment),
+      },
+    ]);
+  }
+  if (status === "CANCELED") {
+    menuItems.push([
+      {
+        label: "Recuperar",
+        icon: "i-lucide-rotate-ccw",
+        color: "success",
+        onSelect: () => emit("restore", props.appointment),
       },
     ]);
   }

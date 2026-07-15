@@ -65,7 +65,7 @@ export function useAppointmentStatus() {
       PENDING: ["CONFIRMED", "CANCELED"],
       CONFIRMED: ["COMPLETED", "CANCELED"],
       COMPLETED: [],
-      CANCELED: [],
+      CANCELED: ["PENDING"],
     };
 
     return validTransitions[currentStatus]?.includes(newStatus) || false;
@@ -87,6 +87,10 @@ export function useAppointmentStatus() {
     return status === "PENDING" || status === "CONFIRMED";
   };
 
+  const canRestore = (status: AppointmentStatus): boolean => {
+    return status === "CANCELED";
+  };
+
   return {
     getStatusColor,
     getStatusLabel,
@@ -96,5 +100,6 @@ export function useAppointmentStatus() {
     canConfirm,
     canComplete,
     canRemind,
+    canRestore,
   };
 }
