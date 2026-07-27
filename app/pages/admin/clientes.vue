@@ -3,9 +3,18 @@ import type { Tables } from "~/types/database.types";
 
 definePageMeta({ layout: "default" });
 
-const { clients, status, refresh, fetchClients } = useClients();
+const {
+  pagedClients,
+  pagedStatus,
+  hasMoreClients,
+  clientSearch,
+  clientSort,
+  fetchClientsPage,
+  loadMoreClients,
+} = useClients();
+
 onMounted(() => {
-  fetchClients();
+  fetchClientsPage({ reset: true });
 });
 
 type Client = Tables<"clients">;
@@ -37,6 +46,16 @@ function openDelete(client: Client) {
   deleteModal.client = client;
   deleteModal.open = true;
 }
+
+function onSearch(value: string) {
+  clientSearch.value = value;
+  fetchClientsPage({ reset: true });
+}
+
+function onSort(value: "asc" | "desc") {
+  clientSort.value = value;
+  fetchClientsPage({ reset: true });
+}
 </script>
 
 <template>
@@ -54,9 +73,9 @@ function openDelete(client: Client) {
           size="md"
           :ui="{
             leadingIcon:
-              status === 'pending' ? 'animate-spin duration-200' : '',
+              pagedStatus === 'pending' ? 'animate-spin duration-200' : '',
           }"
-          @click="refresh()"
+          @click="fetchClientsPage({ reset: true })"
         />
         <UButton
           icon="i-lucide-user-plus"
@@ -68,10 +87,15 @@ function openDelete(client: Client) {
     </AppPageHeader>
 
     <ClientList
-      :clients="clients"
-      :loading="status === 'pending'"
+      :clients="pagedClients"
+      :loading="pagedStatus === 'pending' && pagedClients.length === 0"
+      :loading-more="pagedStatus === 'pending' && pagedClients.length > 0"
+      :has-more="hasMoreClients"
       @edit="openEdit"
       @delete="openDelete"
+      @load-more="loadMoreClients"
+      @search="onSearch"
+      @sort="onSort"
     />
 
     <ClientModal

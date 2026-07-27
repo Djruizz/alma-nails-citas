@@ -100,18 +100,20 @@ watch(
 
 const clientOptions = computed(() => {
   return allClients.value.map((c) => ({
-    label: c.is_active ? c.name : `${c.name} (eliminado)`,
+    label: c.name,
     value: c.id,
+    description: c.phone ? `Tel: ${c.phone}` : undefined,
+    inactive: !c.is_active,
     disabled: !c.is_active && c.id !== props.appointment?.client_id,
   }));
 });
 
 const serviceOptions = computed(() => {
   return allServices.value.map((s) => ({
-    label: s.is_active
-      ? `${s.name} - $${s.price}`
-      : `${s.name} - $${s.price} (eliminado)`,
+    label: s.name,
     value: s.id,
+    description: `${s.duration_minutes} min · $${s.price}`,
+    inactive: !s.is_active,
     disabled: !s.is_active && s.id !== props.appointment?.service_id,
   }));
 });
@@ -138,23 +140,45 @@ function onSubmit(event: FormSubmitEvent<AppointmentSchema>) {
     @submit="onSubmit"
   >
     <UFormField name="client_id" label="Cliente" required class="col-span-2">
-      <USelect
+      <USelectMenu
         v-model="state.client_id"
         :items="clientOptions"
+        value-key="value"
+        :search-input="{ placeholder: 'Buscar cliente...' }"
         placeholder="Selecciona un cliente"
         icon="i-lucide-user"
         class="w-full"
-      />
+      >
+        <template #item-label="{ item }">
+          <span :class="{ 'text-muted line-through': item.inactive }">
+            {{ item.label }}
+          </span>
+          <span v-if="item.inactive" class="text-xs text-error ml-1">
+            (eliminado)
+          </span>
+        </template>
+      </USelectMenu>
     </UFormField>
 
     <UFormField name="service_id" label="Servicio" class="col-span-2">
-      <USelect
+      <USelectMenu
         v-model="state.service_id"
         :items="serviceOptions"
+        value-key="value"
+        :search-input="{ placeholder: 'Buscar servicio...' }"
         placeholder="Selecciona un servicio"
         icon="i-lucide-sparkles"
         class="w-full"
-      />
+      >
+        <template #item-label="{ item }">
+          <span :class="{ 'text-muted line-through': item.inactive }">
+            {{ item.label }}
+          </span>
+          <span v-if="item.inactive" class="text-xs text-error ml-1">
+            (eliminado)
+          </span>
+        </template>
+      </USelectMenu>
     </UFormField>
 
     <UFormField name="date" label="Fecha y hora" required class="col-span-2">
