@@ -13,6 +13,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   selectAppointment: [appointment: AppointmentWithRelations];
+  editAppointment: [appointment: AppointmentWithRelations];
   deleteAppointment: [appointment: AppointmentWithRelations];
   createForDate: [date: Date];
   clear: [];
@@ -73,6 +74,7 @@ const formattedDate = computed(() => {
         :key="apt.id"
         :appointment="apt"
         @detail="emit('selectAppointment', apt)"
+        @edit="emit('editAppointment', apt)"
         @delete="emit('deleteAppointment', apt)"
         show-actions
       />

@@ -1,15 +1,22 @@
 <script setup lang="ts">
 definePageMeta({ layout: "default" });
 
-const { clients, fetchClients } = useClients();
-onMounted(() => {
-  fetchClients();
+const { fetchClientsCount } = useClients();
+
+const clientCount = ref(0);
+
+onMounted(async () => {
+  try {
+    clientCount.value = await fetchClientsCount();
+  } catch {
+    // silencioso: el card simplemente muestra 0
+  }
 });
 
 const stats = computed(() => [
   {
     label: "Total Clientes",
-    value: clients.value.length,
+    value: clientCount.value,
     icon: "i-lucide-users",
     color: "text-primary",
     bg: "bg-primary/10",

@@ -15,62 +15,69 @@ const emit = defineEmits<{
   cancel: [];
 }>();
 
-const { clients, fetchClients } = useClients();
+const { searchClients, getClientById } = useClients();
 const { services, fetchServices } = useServices();
 const { toDatetimeLocal, fromDatetimeLocal } = useDateUtils();
 
 const supabase = useSupabaseClient();
 
-const allClients = ref<any[]>([]);
 const allServices = ref<any[]>([]);
 
-onMounted(async () => {
-  await fetchClients();
-  await fetchServices();
+// --- Selector de cliente: búsqueda server-side ---
+type ClientPick = Awaited<ReturnType<typeof searchClients>>[number];
+const clientItems = ref<ClientPick[]>([]);
+const clientSearchTerm = ref("");
+let clientSearchTimer: ReturnType<typeof setTimeout> | undefined;
 
-  allClients.value = [...clients.value];
-  allServices.value = [...services.value];
+const clientOptions = computed(() => {
+  return clientItems.value.map((c) => {
+    const isCurrent = c.id === props.appointment?.client_id;
+    return {
+      label: c.name,
+      value: c.id,
+      description: c.phone ? `Tel: ${c.phone}` : undefined,
+      inactive: !c.is_active,
+      disabled: !c.is_active && !isCurrent,
+    };
+  });
+});
 
-  if (!props.appointment) return;
+async function runClientSearch(term: string) {
+  try {
+    // Si hay un cliente seleccionado actualmente que no esté en los resultados
+    // (porque quedó inactivo o fuera del top 20), lo conservamos para que el
+    // trigger del SelectMenu siga mostrándolo.
+    const currentId = props.appointment?.client_id ?? null;
+    const pickedId = state.client_id || null;
+    const results = await searchClients(term);
 
-  if (props.appointment.client_id) {
-    const existingClient = allClients.value.find(
-      (c) => c.id === props.appointment!.client_id,
+    const keepIds = new Set(
+      [currentId, pickedId].filter(
+        (id): id is string => id !== null && id !== "",
+      ),
     );
+    const kept =
+      keepIds.size > 0
+        ? clientItems.value.filter((c) => keepIds.has(c.id))
+        : [];
 
-    if (!existingClient || !existingClient.is_active) {
-      const { data: clientData } = await supabase
-        .from("clients")
-        .select("id, name, phone, is_active")
-        .eq("id", props.appointment.client_id)
-        .single();
-
-      if (clientData && !allClients.value.find((c) => c.id === clientData.id)) {
-        allClients.value.push(clientData);
+    const seen = new Set(kept.map((c) => c.id));
+    const merged = [...kept];
+    for (const c of results) {
+      if (!seen.has(c.id)) {
+        merged.push(c);
+        seen.add(c.id);
       }
     }
+    clientItems.value = merged;
+  } catch {
+    // silencioso: la lista queda como estaba
   }
+}
 
-  if (props.appointment.service_id) {
-    const existingService = allServices.value.find(
-      (s) => s.id === props.appointment!.service_id,
-    );
-
-    if (!existingService || !existingService.is_active) {
-      const { data: serviceData } = await supabase
-        .from("services")
-        .select("id, name, price, duration_minutes, is_active")
-        .eq("id", props.appointment.service_id)
-        .single();
-
-      if (
-        serviceData &&
-        !allServices.value.find((s) => s.id === serviceData.id)
-      ) {
-        allServices.value.push(serviceData);
-      }
-    }
-  }
+watch(clientSearchTerm, (term) => {
+  if (clientSearchTimer) clearTimeout(clientSearchTimer);
+  clientSearchTimer = setTimeout(() => runClientSearch(term), 350);
 });
 
 const state = reactive<AppointmentSchema>({
@@ -98,14 +105,47 @@ watch(
   { immediate: true },
 );
 
-const clientOptions = computed(() => {
-  return allClients.value.map((c) => ({
-    label: c.name,
-    value: c.id,
-    description: c.phone ? `Tel: ${c.phone}` : undefined,
-    inactive: !c.is_active,
-    disabled: !c.is_active && c.id !== props.appointment?.client_id,
-  }));
+onMounted(async () => {
+  await fetchServices();
+  allServices.value = [...services.value];
+
+  // Carga inicial de clientes (primeros 20 alfabéticos).
+  await runClientSearch("");
+
+  if (!props.appointment) return;
+
+  // Aseguramos que el cliente de la cita (aunque esté inactivo) esté disponible
+  // para que el trigger del SelectMenu muestre su nombre.
+  const clientId = props.appointment?.client_id;
+  if (clientId) {
+    const existing = clientItems.value.find((c) => c.id === clientId);
+    if (!existing) {
+      const current = await getClientById(clientId);
+      if (current) {
+        clientItems.value = [current, ...clientItems.value];
+      }
+    }
+  }
+
+  // Servicio inactivo: mismo patrón que antes via supabase.
+  if (props.appointment.service_id) {
+    const existingService = allServices.value.find(
+      (s) => s.id === props.appointment!.service_id,
+    );
+    if (!existingService || !existingService.is_active) {
+      const { data: serviceData } = await supabase
+        .from("services")
+        .select("id, name, price, duration_minutes, is_active")
+        .eq("id", props.appointment.service_id)
+        .single();
+      if (
+        serviceData &&
+        !allServices.value.find((s) => s.id === serviceData.id)
+      ) {
+        allServices.value.push(serviceData);
+      }
+    }
+  }
 });
 
 const serviceOptions = computed(() => {
@@ -142,9 +182,11 @@ function onSubmit(event: FormSubmitEvent<AppointmentSchema>) {
     <UFormField name="client_id" label="Cliente" required class="col-span-2">
       <USelectMenu
         v-model="state.client_id"
+        v-model:search-term="clientSearchTerm"
         :items="clientOptions"
         value-key="value"
         :search-input="{ placeholder: 'Buscar cliente...' }"
+        :ignore-filter="true"
         placeholder="Selecciona un cliente"
         icon="i-lucide-user"
         class="w-full"
@@ -182,7 +224,12 @@ function onSubmit(event: FormSubmitEvent<AppointmentSchema>) {
     </UFormField>
 
     <UFormField name="date" label="Fecha y hora" required class="col-span-2">
-      <UInput v-model="state.date" type="datetime-local" icon="i-lucide-calendar" class="w-full" />
+      <UInput
+        v-model="state.date"
+        type="datetime-local"
+        icon="i-lucide-calendar"
+        class="w-full"
+      />
     </UFormField>
 
     <UFormField name="duration_minutes" label="Duración (min)" required>

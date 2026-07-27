@@ -11,10 +11,10 @@ export function useDateUtils() {
   };
 
   const fromDatetimeLocal = (datetimeLocal: string): string => {
-    const [datePart, timePart] = datetimeLocal.split("T");
-    const [year, month, day] = datePart.split("-").map(Number);
-    const [hours, minutes] = timePart.split(":").map(Number);
-    
+    const [datePart = "", timePart = ""] = datetimeLocal.split("T");
+    const [year = 0, month = 1, day = 1] = datePart.split("-").map(Number);
+    const [hours = 0, minutes = 0] = timePart.split(":").map(Number);
+
     const localDate = new Date(year, month - 1, day, hours, minutes);
     return localDate.toISOString();
   };

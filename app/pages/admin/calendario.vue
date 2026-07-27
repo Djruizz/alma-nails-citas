@@ -72,6 +72,12 @@ function openDetail(appointment: AppointmentWithRelations) {
   detailModal.open = true;
 }
 
+function openEdit(appointment: AppointmentWithRelations) {
+  modal.mode = "edit";
+  modal.appointment = appointment;
+  modal.open = true;
+}
+
 function openDelete(appointment: AppointmentWithRelations) {
   deleteModal.appointment = appointment;
   deleteModal.open = true;
@@ -160,6 +166,7 @@ watch(
         v-if="selectedDay"
         :day="selectedDay"
         @select-appointment="onSelectAppointment"
+        @edit-appointment="openEdit"
         @delete-appointment="openDelete"
         @create-for-date="openCreateForDate"
         @clear="clearSelectedDay"

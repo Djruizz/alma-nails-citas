@@ -22,8 +22,8 @@ const search = ref("");
 const sort = ref<"asc" | "desc">("asc");
 
 const sortItems = [
-  { label: "A - Z", value: "asc" as const, icon: "i-lucide-arrow-up-a-z" },
-  { label: "Z - A", value: "desc" as const, icon: "i-lucide-arrow-down-a-z" },
+  { label: "A - Z", value: "asc" as const, icon: "i-lucide-arrow-down-a-z" },
+  { label: "Z - A", value: "desc" as const, icon: "i-lucide-arrow-up-a-z" },
 ];
 
 // Debounce casero para no machacar Supabase con cada tecla.
@@ -64,7 +64,9 @@ watch(sort, (value) => emit("sort", value));
       v-if="clients.length === 0"
       class="flex flex-col items-center justify-center gap-3 py-20"
     >
-      <div class="flex items-center justify-center size-16 rounded-2xl bg-muted">
+      <div
+        class="flex items-center justify-center size-16 rounded-2xl bg-muted"
+      >
         <UIcon name="i-lucide-search-x" class="size-8 text-dimmed" />
       </div>
       <p class="text-muted text-sm">No se encontraron clientes</p>
