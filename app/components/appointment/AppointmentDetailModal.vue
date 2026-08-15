@@ -82,6 +82,14 @@ const statusIcon = computed(() => {
   return getStatusIcon(props.appointment.status);
 });
 
+const isReagendada = computed(() => {
+  return (
+    !!props.appointment &&
+    props.appointment.status === "COMPLETED" &&
+    props.appointment.followed_up === true
+  );
+});
+
 const displayPrice = computed(() => {
   if (
     props.appointment?.status === "COMPLETED" &&
@@ -273,6 +281,15 @@ async function onRestore() {
             <UIcon :name="statusIcon" class="size-3.5" />
             {{ statusLabel }}
           </UBadge>
+          <UBadge
+            v-if="isReagendada"
+            color="success"
+            size="sm"
+            variant="subtle"
+            icon="i-lucide-calendar-check"
+            class="shrink-0"
+            label="Reagendada"
+          />
           <UButton
             :icon="'i-lucide-x'"
             variant="link"

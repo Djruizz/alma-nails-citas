@@ -20,6 +20,7 @@ export type Database = {
           created_at: string
           date: string
           duration_minutes: number
+          followed_up: boolean
           id: string
           notes: string | null
           price: number | null
@@ -33,6 +34,7 @@ export type Database = {
           created_at?: string
           date: string
           duration_minutes: number
+          followed_up?: boolean
           id?: string
           notes?: string | null
           price?: number | null
@@ -46,6 +48,7 @@ export type Database = {
           created_at?: string
           date?: string
           duration_minutes?: number
+          followed_up?: boolean
           id?: string
           notes?: string | null
           price?: number | null

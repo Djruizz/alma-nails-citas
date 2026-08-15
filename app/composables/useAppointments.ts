@@ -16,7 +16,8 @@ type StatusFilter =
   | "CONFIRMED"
   | "COMPLETED"
   | "CANCELED"
-  | "REMEMBER";
+  | "REMEMBER"
+  | "REAGENDADA";
 
 export function useAppointments() {
   const supabase = useSupabaseClient();
@@ -143,9 +144,13 @@ export function useAppointments() {
     if (filter === "ALL") return true;
     if (filter === "REMEMBER") {
       if (appointment.status !== "COMPLETED") return false;
+      if (appointment.followed_up) return false;
       const threeWeeksAgo = new Date();
       threeWeeksAgo.setDate(threeWeeksAgo.getDate() - 21);
       return new Date(appointment.date) <= threeWeeksAgo;
+    }
+    if (filter === "REAGENDADA") {
+      return appointment.status === "COMPLETED" && appointment.followed_up;
     }
     return appointment.status === filter;
   };
@@ -174,7 +179,10 @@ export function useAppointments() {
       threeWeeksAgo.setDate(threeWeeksAgo.getDate() - 21);
       query = query
         .eq("status", "COMPLETED")
+        .eq("followed_up", false)
         .lte("date", threeWeeksAgo.toISOString());
+    } else if (filter === "REAGENDADA") {
+      query = query.eq("status", "COMPLETED").eq("followed_up", true);
     } else if (filter !== "ALL") {
       query = query.eq("status", filter);
     }
@@ -540,6 +548,37 @@ export function useAppointments() {
     listIdsOrder.value = listIdsOrder.value.filter((listId) => listId !== id);
   };
 
+  // Marca una cita completada como "reagendada" (seguimiento correcto).
+  // No cambia el status (sigue COMPLETED) para conservar precio y estadisticas;
+  // solo setea followed_up = true, lo que la excluye del filtro "Recordar" y
+  // del badge de "N semanas".
+  const markReagendada = async (id: string) => {
+    const appointment = findAppointment(id);
+    if (!appointment) {
+      throw new Error("Cita no encontrada");
+    }
+    if (appointment.status !== "COMPLETED") {
+      throw new Error("Solo se pueden reagendar citas completadas");
+    }
+    if (appointment.followed_up) {
+      throw new Error("La cita ya está marcada como reagendada");
+    }
+
+    const { data, error } = await supabase
+      .from("appointments")
+      .update({ followed_up: true, updated_at: new Date().toISOString() })
+      .eq("id", id)
+      .select("*, clients(*), services(*)")
+      .single();
+
+    if (error) throw error;
+
+    if (data) {
+      mergeIntoMap([data as AppointmentWithRelations]);
+      removeFromListIfNotMatching(id, data as AppointmentWithRelations);
+    }
+  };
+
   // Exposed for potential future hard-delete flows
   // removeFromMap is not currently exported to keep the public API minimal
 
@@ -571,5 +610,6 @@ export function useAppointments() {
     completeAppointment,
     remindViaWhatsApp,
     followUpViaWhatsApp,
+    markReagendada,
   };
 }

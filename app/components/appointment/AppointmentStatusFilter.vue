@@ -5,7 +5,8 @@ type StatusFilter =
   | "CONFIRMED"
   | "COMPLETED"
   | "CANCELED"
-  | "REMEMBER";
+  | "REMEMBER"
+  | "REAGENDADA";
 
 const modelValue = defineModel<StatusFilter>({ default: "ALL" });
 
@@ -33,6 +34,12 @@ const statusFilters = [
     value: "COMPLETED" as const,
     icon: "i-lucide-check-check",
     iconColor: "text-green-500",
+  },
+  {
+    label: "Reagendadas",
+    value: "REAGENDADA" as const,
+    icon: "i-lucide-calendar-check",
+    iconColor: "text-emerald-500",
   },
   {
     label: "Canceladas",

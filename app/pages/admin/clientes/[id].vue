@@ -14,6 +14,7 @@ const {
   fetchClientAppointments,
   refreshClientAppointments,
   restoreAppointment,
+  markReagendada,
 } = useAppointments();
 
 type Client = Tables<"clients">;
@@ -137,6 +138,25 @@ async function onRestore(a: AppointmentWithRelations) {
   }
 }
 
+async function onReagendar(a: AppointmentWithRelations) {
+  try {
+    await markReagendada(a.id);
+    toast.add({
+      title: "Cita reagendada",
+      description: "Se marcó el seguimiento como completado",
+      color: "success",
+      icon: "i-lucide-calendar-check",
+    });
+  } catch (err: any) {
+    toast.add({
+      title: "Error",
+      description: err?.message || "Ocurrió un error inesperado",
+      color: "error",
+      icon: "i-lucide-alert-circle",
+    });
+  }
+}
+
 async function onRefreshAll() {
   refreshing.value = true;
   try {
@@ -238,6 +258,7 @@ watch(
           @detail="openDetailAppointment"
           @delete="openDeleteAppointment"
           @restore="onRestore"
+          @reagendar="onReagendar"
         />
       </div>
     </template>

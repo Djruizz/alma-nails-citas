@@ -9,6 +9,8 @@ type AppointmentWithRelations = Tables<"appointments"> & {
   services?: Tables<"services"> | null;
 };
 
+const toast = useToast();
+
 const {
   currentView,
   title,
@@ -27,6 +29,7 @@ const {
   calendarStatus,
   fetchAppointmentsByRange,
   refreshCalendar,
+  markReagendada,
 } = useAppointments();
 
 const { toISODateKey } = useDateUtils();
@@ -94,6 +97,25 @@ function onSelectDay(date: Date) {
 
 function onSelectAppointment(appointment: AppointmentWithRelations) {
   openDetail(appointment);
+}
+
+async function onReagendar(appointment: AppointmentWithRelations) {
+  try {
+    await markReagendada(appointment.id);
+    toast.add({
+      title: "Cita reagendada",
+      description: "Se marcó el seguimiento como completado",
+      color: "success",
+      icon: "i-lucide-calendar-check",
+    });
+  } catch (err: any) {
+    toast.add({
+      title: "Error",
+      description: err?.message || "Ocurrió un error inesperado",
+      color: "error",
+      icon: "i-lucide-alert-circle",
+    });
+  }
 }
 
 function clearSelectedDay() {
@@ -168,6 +190,7 @@ watch(
         @select-appointment="onSelectAppointment"
         @edit-appointment="openEdit"
         @delete-appointment="openDelete"
+        @reagendar-appointment="onReagendar"
         @create-for-date="openCreateForDate"
         @clear="clearSelectedDay"
       />

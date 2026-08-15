@@ -14,6 +14,7 @@ const {
   loadMore,
   setFilter,
   restoreAppointment,
+  markReagendada,
 } = useAppointments();
 
 const toast = useToast();
@@ -23,7 +24,14 @@ type AppointmentWithRelations = Tables<"appointments"> & {
   services?: Tables<"services"> | null;
 };
 
-type StatusFilter = "ALL" | "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELED" | "REMEMBER";
+type StatusFilter =
+  | "ALL"
+  | "PENDING"
+  | "CONFIRMED"
+  | "COMPLETED"
+  | "CANCELED"
+  | "REMEMBER"
+  | "REAGENDADA";
 
 const selectedStatus = ref<StatusFilter>(currentFilter.value);
 
@@ -91,6 +99,25 @@ async function onRestore(appointment: AppointmentWithRelations) {
     });
   }
 }
+
+async function onReagendar(appointment: AppointmentWithRelations) {
+  try {
+    await markReagendada(appointment.id);
+    toast.add({
+      title: "Cita reagendada",
+      description: "Se marcó el seguimiento como completado",
+      color: "success",
+      icon: "i-lucide-calendar-check",
+    });
+  } catch (err: any) {
+    toast.add({
+      title: "Error",
+      description: err?.message || "Ocurrió un error inesperado",
+      color: "error",
+      icon: "i-lucide-alert-circle",
+    });
+  }
+}
 </script>
 
 <template>
@@ -130,6 +157,7 @@ async function onRestore(appointment: AppointmentWithRelations) {
       @detail="openDetail"
       @delete="openDelete"
       @restore="onRestore"
+      @reagendar="onReagendar"
     />
 
     <div v-if="hasMore" class="flex items-center justify-center py-4">

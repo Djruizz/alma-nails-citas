@@ -15,6 +15,7 @@ const emit = defineEmits<{
   selectAppointment: [appointment: AppointmentWithRelations];
   editAppointment: [appointment: AppointmentWithRelations];
   deleteAppointment: [appointment: AppointmentWithRelations];
+  reagendarAppointment: [appointment: AppointmentWithRelations];
   createForDate: [date: Date];
   clear: [];
 }>();
@@ -76,6 +77,7 @@ const formattedDate = computed(() => {
         @detail="emit('selectAppointment', apt)"
         @edit="emit('editAppointment', apt)"
         @delete="emit('deleteAppointment', apt)"
+        @reagendar="emit('reagendarAppointment', apt)"
         show-actions
       />
     </div>

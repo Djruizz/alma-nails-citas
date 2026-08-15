@@ -17,6 +17,7 @@ const emit = defineEmits<{
   detail: [appointment: AppointmentWithRelations];
   delete: [appointment: AppointmentWithRelations];
   restore: [appointment: AppointmentWithRelations];
+  reagendar: [appointment: AppointmentWithRelations];
 }>();
 
 const { getStatusColor, getStatusIcon, canCancel, canConfirm } =
@@ -74,7 +75,15 @@ const statusIconClasses = computed(() => {
 const needsFollowUp = computed(() => {
   return (
     props.appointment.status === "COMPLETED" &&
+    !props.appointment.followed_up &&
     isWeeksOrMoreAgo(props.appointment.date, 3)
+  );
+});
+
+const isReagendada = computed(() => {
+  return (
+    props.appointment.status === "COMPLETED" &&
+    props.appointment.followed_up === true
   );
 });
 
@@ -97,15 +106,23 @@ const items = computed<DropdownMenuItem[][]>(() => {
       },
     ]);
   }
-  if (needsFollowUp.value && props.appointment.clients?.phone) {
-    menuItems.push([
-      {
+  if (needsFollowUp.value) {
+    const followUpGroup: DropdownMenuItem[] = [];
+    if (props.appointment.clients?.phone) {
+      followUpGroup.push({
         label: "Seguimiento",
         icon: "i-lucide-message-circle",
         color: "primary",
         onSelect: () => followUpViaWhatsApp(props.appointment),
-      },
-    ]);
+      });
+    }
+    followUpGroup.push({
+      label: "Marcar reagendada",
+      icon: "i-lucide-calendar-check",
+      color: "success",
+      onSelect: () => emit("reagendar", props.appointment),
+    });
+    menuItems.push(followUpGroup);
   }
   menuItems.push([
     {
@@ -172,6 +189,14 @@ function onWhatsAppClick(event: Event) {
               color="neutral"
               icon="i-lucide-user-x"
               label="Inactiva"
+            />
+            <UBadge
+              v-if="isReagendada"
+              size="sm"
+              variant="subtle"
+              color="success"
+              icon="i-lucide-calendar-check"
+              label="Reagendada"
             />
             <UBadge
               v-if="needsFollowUp"
