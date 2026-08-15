@@ -5,9 +5,14 @@ const props = defineProps<{
   client?: Tables<"clients">;
 }>();
 
+const emit = defineEmits<{
+  deleted: [id: string];
+}>();
+
 const open = defineModel<boolean>("open", { default: false });
 
 const { removeClient } = useClients();
+const { syncClientInAppointments } = useAppointments();
 const toast = useToast();
 
 const deleting = ref(false);
@@ -33,6 +38,12 @@ async function onConfirm() {
       color: "success",
       icon: "i-lucide-check-circle",
     });
+    const inactiveClient: Tables<"clients"> = {
+      ...props.client,
+      is_active: false,
+    };
+    syncClientInAppointments(inactiveClient);
+    if (props.client?.id) emit("deleted", props.client.id);
     open.value = false;
   } catch (err: any) {
     toast.add({

@@ -20,7 +20,9 @@ export type ClientPick = {
 // Supabase tipa `.select("id, name, phone, is_active")` como la Row completa
 // por defecto; otros tipos lo infieren como Partial. Normalizamos al tipo
 // narrow no-opcional para que el consumidor acceda con seguridad de tipos.
-function toClientPick(row: Partial<Client> | null | undefined): ClientPick | null {
+function toClientPick(
+  row: Partial<Client> | null | undefined,
+): ClientPick | null {
   if (!row || !row.id || !row.name) return null;
   return {
     id: row.id,
@@ -80,6 +82,19 @@ export function useClients() {
       .maybeSingle();
     if (error) throw error;
     return toClientPick(data as Partial<Client>);
+  };
+
+  // Obtiene el registro completo de un cliente (incluye notas, client_since,
+  // timestamps). Usado por la vista de detalle individual de cliente.
+  // No filtra por is_active: la vista debe poder mostrar clientes inactivos.
+  const getClientDetail = async (id: string): Promise<Client | null> => {
+    const { data, error } = await supabase
+      .from("clients")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
+    if (error) throw error;
+    return (data as Client | null) ?? null;
   };
 
   // Conteo exacto de clientes activos (dashboard). head=true → no trae filas.
@@ -202,6 +217,7 @@ export function useClients() {
     searchClients,
     getClientById,
     fetchClientsCount,
+    getClientDetail,
     // Mutaciones
     createClient,
     updateClient,

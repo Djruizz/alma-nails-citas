@@ -19,7 +19,7 @@ const state = reactive<ClientSchema>({
   notes: "",
 });
 
-const formRef = useTemplateRef<{ clearErrors: () => void }>("formRef");
+// const formRef = useTemplateRef<{ clearErrors: () => void }>("formRef");
 
 watch(
   () => props.client,
@@ -28,7 +28,7 @@ watch(
     state.phone = val?.phone ?? "";
     state.client_since = val?.client_since ?? "";
     state.notes = val?.notes ?? "";
-    formRef.value?.clearErrors();
+    // formRef.value?.clearErrors();
   },
   { immediate: true },
 );
@@ -62,7 +62,12 @@ function onSubmit(event: FormSubmitEvent<ClientSchema>) {
     </UFormField>
 
     <UFormField name="phone" label="Teléfono">
-      <UInput v-model="state.phone" placeholder="Teléfono" icon="i-lucide-phone" class="w-full" />
+      <UInput
+        v-model="state.phone"
+        placeholder="Teléfono"
+        icon="i-lucide-phone"
+        class="w-full"
+      />
     </UFormField>
     <UFormField name="client_since" label="Cliente desde:">
       <UInput

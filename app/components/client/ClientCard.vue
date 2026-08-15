@@ -23,6 +23,13 @@ const initials = computed(() => {
 const items = computed<DropdownMenuItem[][]>(() => [
   [
     {
+      label: "Ver historial",
+      icon: "i-lucide-history",
+      onSelect: () => navigateTo(`/admin/clientes/${props.client.id}`),
+    },
+  ],
+  [
+    {
       label: "Editar",
       icon: "i-lucide-pencil",
       onSelect: () => emit("edit", props.client),

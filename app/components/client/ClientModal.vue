@@ -7,9 +7,14 @@ const props = defineProps<{
   client?: Tables<"clients">;
 }>();
 
+const emit = defineEmits<{
+  saved: [client: Tables<"clients">];
+}>();
+
 const open = defineModel<boolean>("open", { default: false });
 
 const { createClient, updateClient } = useClients();
+const { syncClientInAppointments } = useAppointments();
 const user = useSupabaseUser();
 const toast = useToast();
 
@@ -18,8 +23,9 @@ const saving = ref(false);
 async function onSubmit(payload: ClientSchema) {
   saving.value = true;
   try {
+    let saved: Tables<"clients"> | null = null;
     if (props.mode === "edit" && props.client) {
-      await updateClient(props.client.id, payload);
+      saved = await updateClient(props.client.id, payload);
       toast.add({
         title: "Cliente actualizado",
         description: payload.name,
@@ -30,7 +36,7 @@ async function onSubmit(payload: ClientSchema) {
       const professionalId = user.value?.sub;
       if (!professionalId)
         throw new Error("No se pudo obtener el usuario autenticado");
-      await createClient({
+      saved = await createClient({
         ...payload,
         professional_id: professionalId,
         updated_at: new Date().toISOString(),
@@ -41,6 +47,10 @@ async function onSubmit(payload: ClientSchema) {
         color: "success",
         icon: "i-lucide-check-circle",
       });
+    }
+    if (saved) {
+      emit("saved", saved);
+      syncClientInAppointments(saved);
     }
     open.value = false;
   } catch (err: any) {

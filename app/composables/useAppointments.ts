@@ -10,7 +10,13 @@ type AppointmentWithRelations = Tables<"appointments"> & {
   services?: Tables<"services"> | null;
 };
 
-type StatusFilter = "ALL" | "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELED" | "REMEMBER";
+type StatusFilter =
+  | "ALL"
+  | "PENDING"
+  | "CONFIRMED"
+  | "COMPLETED"
+  | "CANCELED"
+  | "REMEMBER";
 
 export function useAppointments() {
   const supabase = useSupabaseClient();
@@ -55,6 +61,18 @@ export function useAppointments() {
     () => null,
   );
 
+  // Citas de un cliente específico para la vista de detalle de cliente.
+  // Guardamos el id cargado y el status; la lista se deriva (computed) desde el
+  // map compartido → así confirmar/cancelar/completar hechos desde el modal de
+  // detalle se reflejan automáticamente sin re-fetch.
+  const clientAppointmentsStatus = useState<
+    "idle" | "pending" | "success" | "error"
+  >("client-appointments-status", () => "idle");
+  const clientAppointmentsLoadedId = useState<string | null>(
+    "client-appointments-loaded-id",
+    () => null,
+  );
+
   // DERIVADOS (computed) — ya no hay caches duplicados
   const appointments = computed<AppointmentWithRelations[]>(() =>
     listIdsOrder.value
@@ -78,6 +96,15 @@ export function useAppointments() {
     return grouped;
   });
 
+  // Lista de citas ordenadas desc por fecha para el cliente cargado.
+  const clientAppointments = computed<AppointmentWithRelations[]>(() => {
+    const id = clientAppointmentsLoadedId.value;
+    if (!id) return [];
+    return Array.from(appointmentsById.value.values())
+      .filter((a) => a.client_id === id)
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  });
+
   // Helpers de mutación del Map (nueva ref para disparar reactividad)
   const mergeIntoMap = (rows: AppointmentWithRelations[]) => {
     const next = new Map(appointmentsById.value);
@@ -89,6 +116,22 @@ export function useAppointments() {
     const next = new Map(appointmentsById.value);
     next.delete(id);
     appointmentsById.value = next;
+  };
+
+  // Sincroniza un cliente editado/desactivado en todas las citas del Map que
+  // lo referencian. Como `appointments`, `calendarAppointments` y
+  // `clientAppointments` derivan del Map, las cards de todas las páginas se
+  // actualizan reactivamente sin re-fetch.
+  const syncClientInAppointments = (client: Tables<"clients">) => {
+    let changed = false;
+    const next = new Map(appointmentsById.value);
+    for (const [id, apt] of next) {
+      if (apt.client_id === client.id && apt.clients !== client) {
+        next.set(id, { ...apt, clients: client });
+        changed = true;
+      }
+    }
+    if (changed) appointmentsById.value = next;
   };
 
   const findAppointment = (id: string) => appointmentsById.value.get(id);
@@ -111,7 +154,10 @@ export function useAppointments() {
     id: string,
     appointment: AppointmentWithRelations,
   ) => {
-    if (status.value === "success" && !matchesFilter(appointment, currentFilter.value)) {
+    if (
+      status.value === "success" &&
+      !matchesFilter(appointment, currentFilter.value)
+    ) {
       listIdsOrder.value = listIdsOrder.value.filter((listId) => listId !== id);
     }
   };
@@ -225,7 +271,10 @@ export function useAppointments() {
     if (data) {
       const row = data as AppointmentWithRelations;
       mergeIntoMap([row]);
-      if (status.value === "success" && matchesFilter(row, currentFilter.value)) {
+      if (
+        status.value === "success" &&
+        matchesFilter(row, currentFilter.value)
+      ) {
         listIdsOrder.value = [row.id, ...listIdsOrder.value];
       }
     }
@@ -364,6 +413,51 @@ export function useAppointments() {
     calendarStatus.value = "success";
   };
 
+  // Trae TODAS las citas del cliente ordenadas por fecha descendente.
+  // Mergea al map compartido para que AppointmentCard/DetailModal puedan
+  // operar sobre ellas con el mismo flujo de estado (confirmar/cancelar/etc.).
+  // Si ya están cargadas para el mismo cliente, hace short-circuit.
+  const fetchClientAppointments = async (
+    clientId: string,
+    opts: { force?: boolean } = {},
+  ) => {
+    if (
+      !opts.force &&
+      clientAppointmentsLoadedId.value === clientId &&
+      clientAppointmentsStatus.value === "success"
+    ) {
+      return;
+    }
+    // Si cambia de cliente, limpia el id cargado ANTES del await para que el
+    // computed `clientAppointments` devuelva [] (mostrando skeletons en vez
+    // de flash de las citas de la clienta anterior). En refresh del mismo
+    // cliente preservamos los datos para evitar parpadeo.
+    if (clientAppointmentsLoadedId.value !== clientId) {
+      clientAppointmentsLoadedId.value = null;
+    }
+    clientAppointmentsStatus.value = "pending";
+    const { data, error } = await supabase
+      .from("appointments")
+      .select("*, clients(*), services(*)")
+      .eq("client_id", clientId)
+      .order("date", { ascending: false });
+
+    if (error) {
+      clientAppointmentsStatus.value = "error";
+      throw error;
+    }
+
+    const rows = (data || []) as AppointmentWithRelations[];
+    mergeIntoMap(rows);
+    clientAppointmentsLoadedId.value = clientId;
+    clientAppointmentsStatus.value = "success";
+  };
+
+  const refreshClientAppointments = async (clientId: string) => {
+    clientAppointmentsStatus.value = "idle";
+    await fetchClientAppointments(clientId, { force: true });
+  };
+
   const refreshCalendar = async (startISO: string, endISO: string) => {
     calendarStatus.value = "idle";
     await fetchAppointmentsByRange(startISO, endISO);
@@ -440,10 +534,7 @@ export function useAppointments() {
   };
 
   const deleteAppointment = async (id: string) => {
-    const { error } = await supabase
-      .from("appointments")
-      .delete()
-      .eq("id", id);
+    const { error } = await supabase.from("appointments").delete().eq("id", id);
     if (error) throw error;
     removeFromMap(id);
     listIdsOrder.value = listIdsOrder.value.filter((listId) => listId !== id);
@@ -460,12 +551,17 @@ export function useAppointments() {
     isLoadingMore,
     calendarAppointments,
     calendarStatus,
+    clientAppointments,
+    clientAppointmentsStatus,
     fetchAppointments,
     loadMore,
     refresh,
     setFilter,
     fetchAppointmentsByRange,
     refreshCalendar,
+    fetchClientAppointments,
+    refreshClientAppointments,
+    syncClientInAppointments,
     createAppointment,
     updateAppointment,
     cancelAppointment,

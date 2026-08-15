@@ -28,6 +28,10 @@ const clientName = computed(
   () => props.appointment.clients?.name || "Sin cliente",
 );
 
+const isClientInactive = computed(() => {
+  return props.appointment.clients?.is_active === false;
+});
+
 const serviceName = computed(
   () => props.appointment.services?.name || "Sin servicio",
 );
@@ -103,16 +107,15 @@ const items = computed<DropdownMenuItem[][]>(() => {
       },
     ]);
   }
-  if (status !== "COMPLETED") {
-    menuItems.push([
-      {
-        label: "Eliminar",
-        icon: "i-lucide-trash-2",
-        color: "error",
-        onSelect: () => emit("delete", props.appointment),
-      },
-    ]);
-  }
+  menuItems.push([
+    {
+      label: "Eliminar",
+      icon: "i-lucide-trash-2",
+      color: "error",
+      onSelect: () => emit("delete", props.appointment),
+    },
+  ]);
+
   if (status === "CANCELED") {
     menuItems.push([
       {
@@ -162,6 +165,14 @@ function onWhatsAppClick(event: Event) {
             <p class="text-sm font-semibold text-highlighted truncate">
               {{ clientName }}
             </p>
+            <UBadge
+              v-if="isClientInactive"
+              size="sm"
+              variant="subtle"
+              color="neutral"
+              icon="i-lucide-user-x"
+              label="Inactiva"
+            />
             <UBadge
               v-if="needsFollowUp"
               size="sm"
